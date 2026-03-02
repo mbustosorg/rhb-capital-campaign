@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Red Hot Beverly — Base Vehicle Replacement</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0a0602;
+    --bg2:      #120b04;
+    --coal:     #1a1008;
+    --ember:    #ff4500;
+    --flame:    #ff8c00;
+    --gold:     #ffcc00;
+    --ash:      #c8aa8a;
+    --smoke:    #4a3828;
+    --border:   #3a2010;
+    --text:     #ffe8cc;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem 3rem;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ── Animated fire background ── */
+  .bg-fire {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .bg-fire::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 40% at 50% 110%, rgba(255,69,0,0.35) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 30% at 20% 100%, rgba(255,140,0,0.2) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 30% at 80% 100%, rgba(255,60,0,0.2) 0%, transparent 60%);
+  }
+
+  .flame-col {
+    position: absolute;
+    bottom: 0;
+    width: 160px;
+    height: 55vh;
+    background: linear-gradient(to top,
+      rgba(255,80,0,0.5) 0%,
+      rgba(255,140,0,0.3) 35%,
+      rgba(255,200,0,0.1) 65%,
+      transparent 100%);
+    border-radius: 50% 50% 0 0 / 80% 80% 0 0;
+    filter: blur(18px);
+    transform-origin: center bottom;
+    animation: flicker 2.5s ease-in-out infinite alternate;
+  }
+  .flame-col:nth-child(1) { left: -2%;  animation-duration: 2.1s; animation-delay: 0s;   height: 45vh; }
+  .flame-col:nth-child(2) { left: 18%;  animation-duration: 2.8s; animation-delay: 0.4s; height: 55vh; width: 200px; }
+  .flame-col:nth-child(3) { left: 38%;  animation-duration: 2.3s; animation-delay: 0.8s; height: 60vh; width: 180px; }
+  .flame-col:nth-child(4) { left: 56%;  animation-duration: 2.6s; animation-delay: 0.2s; height: 50vh; }
+  .flame-col:nth-child(5) { left: 74%;  animation-duration: 2.0s; animation-delay: 0.6s; height: 58vh; width: 200px; }
+  .flame-col:nth-child(6) { left: 90%;  animation-duration: 2.4s; animation-delay: 0.3s; height: 42vh; }
+
+  @keyframes flicker {
+    0%   { transform: scaleX(1)    scaleY(1)    skewX(0deg);  opacity: 0.7; }
+    25%  { transform: scaleX(0.9)  scaleY(1.05) skewX(-2deg); opacity: 0.85; }
+    50%  { transform: scaleX(1.05) scaleY(0.97) skewX(1deg);  opacity: 0.75; }
+    75%  { transform: scaleX(0.95) scaleY(1.08) skewX(-1deg); opacity: 0.9; }
+    100% { transform: scaleX(1.02) scaleY(1.02) skewX(2deg);  opacity: 0.8; }
+  }
+
+  #embers { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    max-width: 520px;
+    width: 100%;
+  }
+
+  /* ── Header ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255,69,0,0.15);
+    border: 1px solid rgba(255,69,0,0.4);
+    border-radius: 4px;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--flame);
+    margin-bottom: 1rem;
+  }
+
+  .badge::before { content: '🔥'; font-size: 0.9rem; }
+
+  .header { text-align: center; margin-bottom: 2.5rem; }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.2rem, 9vw, 3.8rem);
+    line-height: 1.0;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    text-shadow:
+      0 0 20px rgba(255,140,0,0.8),
+      0 0 60px rgba(255,69,0,0.4),
+      2px 2px 0 rgba(0,0,0,0.8);
+  }
+
+  h1 .hot    { color: var(--gold); }
+  h1 .sub    { display: block; font-size: 70%; color: var(--ash); letter-spacing: 0.08em; margin-top: 0.15rem; }
+  h1 .subsub { display: block; font-size: 55%; color: var(--smoke); letter-spacing: 0.12em; }
+
+  .subtitle {
+    margin-top: 0.75rem;
+    color: var(--ash);
+    font-size: 1rem;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Thermometer ── */
+  .thermo-wrap {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .thermometer {
+    position: relative;
+    width: 70px;
+    height: 340px;
+    flex-shrink: 0;
+  }
+
+  .thermo-glow {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 290px;
+    border-radius: 25px 25px 0 0;
+    background: rgba(255,80,0,0.08);
+    filter: blur(12px);
+    pointer-events: none;
+  }
+
+  .thermo-tube {
+    position: absolute;
+    bottom: 52px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 288px;
+    background: linear-gradient(to bottom, #1a0c04, #0f0703);
+    border: 2px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.8), 0 0 8px rgba(255,80,0,0.15);
+  }
+
+  .thermo-tube::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 4px;
+    width: 6px; height: 100%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.06), transparent);
+    border-radius: 3px;
+    pointer-events: none;
+  }
+
+  .thermo-fill {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top,
+      #ff1a00 0%,
+      #ff4500 25%,
+      #ff7a00 55%,
+      #ffcc00 85%,
+      #fff3a0 100%
+    );
+    border-radius: 14px 14px 0 0;
+    transition: height 1.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    height: 0%;
+    box-shadow: 0 0 30px rgba(255,80,0,0.7), 0 0 60px rgba(255,40,0,0.3);
+  }
+
+  .thermo-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(transparent 0px, rgba(255,255,255,0.04) 2px, transparent 4px);
+    animation: shimmer 1.5s linear infinite;
+  }
+
+  @keyframes shimmer {
+    from { background-position: 0 0; }
+    to   { background-position: 0 -20px; }
+  }
+
+  .thermo-bulb {
+    position: absolute;
+    bottom: 0;
+    left: 50%; transform: translateX(-50%);
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 35%, #ff9a00, #ff1a00 60%, #8b0000);
+    border: 2px solid var(--border);
+    box-shadow:
+      0 0 25px rgba(255,69,0,0.9),
+      0 0 60px rgba(255,40,0,0.5),
+      inset 0 2px 6px rgba(255,200,0,0.3);
+    animation: pulse-bulb 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-bulb {
+    from { box-shadow: 0 0 25px rgba(255,69,0,0.9), 0 0 60px rgba(255,40,0,0.5), inset 0 2px 6px rgba(255,200,0,0.3); }
+    to   { box-shadow: 0 0 40px rgba(255,100,0,1),  0 0 80px rgba(255,60,0,0.7),  inset 0 2px 6px rgba(255,220,0,0.5); }
+  }
+
+  .thermo-bulb::after {
+    content: '';
+    position: absolute;
+    top: 10px; left: 14px;
+    width: 10px; height: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    transform: rotate(-30deg);
+  }
+
+  .ticks {
+    position: absolute;
+    bottom: 52px; left: 0;
+    width: 100%; height: 288px;
+    pointer-events: none;
+  }
+
+  .tick {
+    position: absolute;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transform: translateY(50%);
+  }
+
+  .tick-line { width: 8px; height: 1px; background: var(--smoke); }
+
+  .tick-label {
+    font-size: 0.6rem;
+    color: var(--smoke);
+    white-space: nowrap;
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Stats ── */
+  .stats {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-bottom: 56px;
+  }
+
+  .stat-block {
+    background: linear-gradient(135deg, rgba(26,16,8,0.95), rgba(18,11,4,0.95));
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.85rem 1.1rem;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(4px);
+  }
+
+  .stat-block::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(to bottom, var(--gold), var(--ember));
+  }
+
+  .stat-block.highlight::before {
+    width: 4px;
+    background: linear-gradient(to bottom, var(--flame), var(--ember));
+    box-shadow: 0 0 8px rgba(255,140,0,0.6);
+  }
+
+  .stat-block.highlight {
+    box-shadow: inset 0 0 30px rgba(255,69,0,0.05), 0 0 15px rgba(255,69,0,0.1);
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--smoke);
+    margin-bottom: 0.2rem;
+  }
+
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.9rem;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--text);
+    text-shadow: 0 0 10px rgba(255,140,0,0.3);
+  }
+
+  .stat-value.gold  { color: var(--gold);  text-shadow: 0 0 15px rgba(255,200,0,0.5); }
+  .stat-value.flame { color: var(--flame); text-shadow: 0 0 15px rgba(255,140,0,0.6); }
+
+  .pct-pill {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255,80,0,0.12);
+    border: 1px solid rgba(255,80,0,0.3);
+    color: var(--flame);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    padding: 0.2rem 0.65rem;
+    border-radius: 3px;
+    margin-top: 0.35rem;
+    text-transform: uppercase;
+  }
+
+  /* ── Controls ── */
+  .controls {
+    margin-top: 2rem;
+    background: linear-gradient(135deg, rgba(26,16,8,0.97), rgba(15,8,3,0.97));
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 0 40px rgba(255,69,0,0.08);
+  }
+
+  .controls-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.12em;
+    color: var(--ash);
+    margin-bottom: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .controls-title::before { content: '🔥'; }
+
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .input-group { display: flex; flex-direction: column; gap: 0.35rem; }
+
+  label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--smoke);
+  }
+
+  input {
+    background: rgba(10,6,2,0.8);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    padding: 0.55rem 0.8rem;
+    width: 100%;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: var(--ember);
+    box-shadow: 0 0 10px rgba(255,69,0,0.3);
+  }
+
+  .btn {
+    width: 100%;
+    padding: 0.9rem;
+    background: linear-gradient(135deg, #cc2200, #ff4500, #ff8c00);
+    color: #fff5e6;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(255,69,0,0.4), 0 0 40px rgba(255,69,0,0.15);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+
+  .btn:hover {
+    opacity: 0.92;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 28px rgba(255,100,0,0.6), 0 0 60px rgba(255,69,0,0.25);
+  }
+
+  .btn:active { transform: translateY(0); }
+
+  .save-status {
+    text-align: center;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 0.65rem;
+    height: 1.2em;
+    color: transparent;
+    transition: color 0.3s;
+  }
+
+  .save-status.saved   { color: #4ade80; }
+  .save-status.error   { color: var(--ember); }
+  .save-status.loading { color: var(--flame); }
+
+  /* ── Goal reached banner ── */
+  .goal-reached {
+    text-align: center;
+    margin-top: 1rem;
+    padding: 0.85rem;
+    background: rgba(255,69,0,0.1);
+    border: 1px solid rgba(255,69,0,0.4);
+    border-radius: 6px;
+    color: var(--gold);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.15em;
+    display: none;
+    animation: flare 1s ease-in-out infinite alternate;
+  }
+
+  @keyframes flare {
+    from { text-shadow: 0 0 10px rgba(255,200,0,0.5); }
+    to   { text-shadow: 0 0 25px rgba(255,200,0,1), 0 0 50px rgba(255,140,0,0.6); }
+  }
+
+  /* ── Confetti ── */
+  .confetti-burst {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none; z-index: 999;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    width: 8px; height: 8px;
+    opacity: 0;
+    animation: confetti-fall 1.8s ease-in forwards;
+  }
+
+  @keyframes confetti-fall {
+    0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-fire">
+  <div class="flame-col"></div>
+  <div class="flame-col"></div>
+  <div class="flame-col"></div>
+  <div class="flame-col"></div>
+  <div class="flame-col"></div>
+  <div class="flame-col"></div>
+</div>
+
+<canvas id="embers"></canvas>
+
+<div class="container">
+  <div class="header">
+    <div class="badge">Capital Campaign</div>
+    <h1>
+      <span class="hot">Red Hot</span> Beverly
+      <span class="sub">Base Vehicle Replacement</span>
+      <span class="subsub">Capital Campaign</span>
+    </h1>
+    <p class="subtitle">Fueling the future — one donation at a time.</p>
+  </div>
+
+  <div class="thermo-wrap">
+    <div class="thermometer">
+      <div class="thermo-glow"></div>
+      <div class="ticks" id="ticks"></div>
+      <div class="thermo-tube">
+        <div class="thermo-fill" id="fill"></div>
+      </div>
+      <div class="thermo-bulb"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-block">
+        <div class="stat-label">Goal</div>
+        <div class="stat-value gold" id="goalDisplay">$10,000</div>
+      </div>
+      <div class="stat-block highlight">
+        <div class="stat-label">Raised</div>
+        <div class="stat-value flame" id="raisedDisplay">$0</div>
+        <div class="pct-pill" id="percentPill">0% funded</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-label">Remaining</div>
+        <div class="stat-value" id="remainingDisplay">$10,000</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="goalMessage" class="goal-reached">🔥 GOAL REACHED — THANK YOU! 🔥</div>
+
+  <div class="controls">
+    <div class="controls-title">Update the Thermometer</div>
+    <div class="input-row">
+      <div class="input-group">
+        <label for="goalInput">Fundraising Goal ($)</label>
+        <input type="number" id="goalInput" value="10000" min="1">
+      </div>
+      <div class="input-group">
+        <label for="raisedInput">Amount Raised ($)</label>
+        <input type="number" id="raisedInput" value="0" min="0">
+      </div>
+    </div>
+    <button class="btn" onclick="saveAndUpdate()">🔥 Stoke the Fire</button>
+    <div class="save-status" id="saveStatus"></div>
+  </div>
+</div>
+
+<div class="confetti-burst" id="confetti"></div>
+
+<script>
+  /* ── Ember particle system ── */
+  (function() {
+    const canvas = document.getElementById('embers');
+    const ctx = canvas.getContext('2d');
+    let W, H, embers = [];
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+
+    function spawnEmber() {
+      return {
+        x: Math.random() * W,
+        y: H + 10,
+        vx: (Math.random() - 0.5) * 1.2,
+        vy: -(1.5 + Math.random() * 3),
+        size: 1 + Math.random() * 2.5,
+        life: 1,
+        decay: 0.005 + Math.random() * 0.01,
+        hue: 20 + Math.random() * 30
+      };
+    }
+
+    function tick() {
+      ctx.clearRect(0, 0, W, H);
+      if (Math.random() < 0.35) embers.push(spawnEmber());
+      embers = embers.filter(e => e.life > 0);
+      for (const e of embers) {
+        e.x  += e.vx + Math.sin(Date.now() * 0.002 + e.y) * 0.4;
+        e.y  += e.vy;
+        e.vy += 0.01;
+        e.life -= e.decay;
+        ctx.save();
+        ctx.globalAlpha = e.life * 0.85;
+        ctx.shadowBlur  = 6;
+        ctx.shadowColor = `hsl(${e.hue}, 100%, 60%)`;
+        ctx.fillStyle   = `hsl(${e.hue}, 100%, ${50 + e.life * 30}%)`;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.size * e.life, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      requestAnimationFrame(tick);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    tick();
+  })();
+
+  /* ── Thermometer logic ── */
+  const STORAGE_KEY = 'fundraiser-data';
+  let goal = 10000, raised = 0;
+
+  function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+
+  function setStatus(msg, type = '') {
+    const el = document.getElementById('saveStatus');
+    el.textContent = msg;
+    el.className = 'save-status ' + type;
+  }
+
+  function buildTicks() {
+    const container = document.getElementById('ticks');
+    container.innerHTML = '';
+    [0, 25, 50, 75, 100].forEach(p => {
+      const tick = document.createElement('div');
+      tick.className = 'tick';
+      tick.style.bottom = p + '%';
+      tick.innerHTML = `<div class="tick-line"></div><div class="tick-label">${p}%</div>`;
+      container.appendChild(tick);
+    });
+  }
+
+  function renderThermometer() {
+    const pct = Math.min(raised / goal * 100, 100);
+    const remaining = Math.max(goal - raised, 0);
+    document.getElementById('fill').style.height = pct + '%';
+    document.getElementById('goalDisplay').textContent = fmt(goal);
+    document.getElementById('raisedDisplay').textContent = fmt(raised);
+    document.getElementById('remainingDisplay').textContent = fmt(remaining);
+    document.getElementById('percentPill').textContent = Math.round(pct) + '% funded';
+    document.getElementById('goalInput').value = goal;
+    document.getElementById('raisedInput').value = raised;
+    const msg = document.getElementById('goalMessage');
+    if (raised >= goal) { msg.style.display = 'block'; fireConfetti(); }
+    else                 { msg.style.display = 'none'; }
+    buildTicks();
+  }
+
+  async function loadFromStorage() {
+    setStatus('Loading...', 'loading');
+    try {
+      const result = await window.storage.get(STORAGE_KEY);
+      if (result && result.value) {
+        const data = JSON.parse(result.value);
+        goal   = data.goal   ?? 10000;
+        raised = data.raised ?? 0;
+        setStatus('Data loaded ✓', 'saved');
+      } else {
+        setStatus('Starting fresh', '');
+      }
+    } catch (e) {
+      setStatus('Starting fresh', '');
+    }
+    setTimeout(() => setStatus(''), 2500);
+    renderThermometer();
+  }
+
+  async function saveToStorage() {
+    setStatus('Saving...', 'loading');
+    try {
+      const result = await window.storage.set(STORAGE_KEY, JSON.stringify({ goal, raised }));
+      setStatus(result ? 'Saved ✓' : 'Save failed', result ? 'saved' : 'error');
+    } catch (e) {
+      setStatus('Save error', 'error');
+    }
+    setTimeout(() => setStatus(''), 2500);
+  }
+
+  async function saveAndUpdate() {
+    goal   = parseFloat(document.getElementById('goalInput').value)  || 10000;
+    raised = parseFloat(document.getElementById('raisedInput').value) || 0;
+    raised = Math.min(raised, goal * 2);
+    renderThermometer();
+    await saveToStorage();
+  }
+
+  function fireConfetti() {
+    const container = document.getElementById('confetti');
+    container.innerHTML = '';
+    const colors = ['#ff4500','#ff8c00','#ffcc00','#ff2200','#ffaa00','#fff3a0'];
+    for (let i = 0; i < 80; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.top  = '-10px';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+      piece.style.animationDelay    = Math.random() * 0.8 + 's';
+      piece.style.animationDuration = (1.2 + Math.random() * 0.8) + 's';
+      container.appendChild(piece);
+    }
+    setTimeout(() => container.innerHTML = '', 3500);
+  }
+
+  buildTicks();
+  setTimeout(() => loadFromStorage(), 300);
+</script>
+</body>
+</html>
