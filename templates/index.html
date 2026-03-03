@@ -326,7 +326,7 @@ function drawGauge(pct) {
 
   // ── Dot studs around ring (like logo) ──
   for (let i = 0; i < DOT_COUNT; i++) {
-    const angle = (i / DOT_COUNT) * Math.PI * 2 - Math.PI / 2;
+    const angle = (i / DOT_COUNT) * Math.PI * 2 - Math.PI;
     const dotR  = OUTER_R - 13;
     const dx = GCX + Math.cos(angle) * dotR;
     const dy = GCY + Math.sin(angle) * dotR;
