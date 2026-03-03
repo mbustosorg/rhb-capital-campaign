@@ -275,6 +275,69 @@
     </div>
   </div>
 
+  <!-- Google Sheets status card -->
+  <div class="form-card" id="sheetsCard" style="margin-bottom:1.25rem;">
+    <div class="form-title" style="margin-bottom:.85rem;">📊 Google Sheets Source</div>
+
+    <div id="sheetsConfigured" style="display:none;">
+      <!-- shown when SPREADSHEET_ID is set -->
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;flex-wrap:wrap;">
+        <span id="sheetsDot" style="width:10px;height:10px;border-radius:50%;background:#4a3828;flex-shrink:0;"></span>
+        <span id="sheetsStatusText" style="font-size:.8rem;color:var(--ash);letter-spacing:.04em;">Checking…</span>
+        <button onclick="refreshSheets()" id="refreshBtn"
+          style="margin-left:auto;background:rgba(255,69,0,.12);border:1px solid rgba(255,69,0,.35);
+                 border-radius:4px;color:var(--flame);font-family:'Barlow Condensed',sans-serif;
+                 font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;padding:.2rem .6rem;cursor:pointer;">
+          ↻ Refresh
+        </button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.6rem;">
+        <div style="background:rgba(4,2,1,.7);border:1px solid var(--border);border-radius:5px;padding:.5rem .7rem;">
+          <div style="font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--smoke);margin-bottom:.2rem;">Cell</div>
+          <div id="sheetsCell" style="font-family:'Courier New',monospace;font-size:.82rem;color:var(--ash);">—</div>
+        </div>
+        <div style="background:rgba(4,2,1,.7);border:1px solid var(--border);border-radius:5px;padding:.5rem .7rem;">
+          <div style="font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--smoke);margin-bottom:.2rem;">Live Value</div>
+          <div id="sheetsValue" style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);">—</div>
+        </div>
+      </div>
+      <div style="background:rgba(4,2,1,.7);border:1px solid var(--border);border-radius:5px;padding:.5rem .7rem;margin-bottom:.5rem;">
+        <div style="font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--smoke);margin-bottom:.2rem;">Spreadsheet</div>
+        <a id="sheetsLink" href="#" target="_blank"
+           style="font-family:'Courier New',monospace;font-size:.7rem;color:var(--flame);text-decoration:none;word-break:break-all;">—</a>
+      </div>
+      <div id="sheetsError" style="display:none;background:rgba(255,69,0,.1);border:1px solid rgba(255,69,0,.35);
+           border-radius:5px;padding:.5rem .7rem;font-size:.72rem;color:#ff8c8c;line-height:1.5;margin-bottom:.5rem;"></div>
+      <p style="font-size:.63rem;color:var(--smoke);letter-spacing:.06em;line-height:1.5;">
+        Cached for <span id="sheetsCacheSecs">60</span>s · Mode: <span id="sheetsMode" style="color:var(--ash);">public</span>
+      </p>
+    </div>
+
+    <div id="sheetsNotConfigured">
+      <!-- shown when SPREADSHEET_ID is not set -->
+      <p style="font-size:.8rem;color:var(--ash);line-height:1.6;margin-bottom:.85rem;">
+        Connect a Google Sheet so the gauge reads the <em>raised</em> value live from a spreadsheet cell.
+      </p>
+      <ol style="font-size:.78rem;color:var(--ash);line-height:1.8;padding-left:1.2rem;margin-bottom:.85rem;">
+        <li>Open your Google Sheet → <strong style="color:var(--text);">File → Share → Anyone with the link = Viewer</strong></li>
+        <li>Copy the Spreadsheet ID from the URL:<br>
+          <code style="font-size:.7rem;color:var(--flame);background:rgba(0,0,0,.4);padding:.1rem .4rem;border-radius:3px;">
+            …/spreadsheets/d/<strong>SPREADSHEET_ID</strong>/edit
+          </code>
+        </li>
+        <li>Add to your <code style="color:var(--flame);">.env</code> file:</li>
+      </ol>
+      <pre style="background:rgba(4,2,1,.9);border:1px solid var(--border);border-radius:6px;
+                  padding:.75rem;font-size:.72rem;color:var(--ash);overflow-x:auto;line-height:1.7;">SHEETS_MODE=public
+SPREADSHEET_ID=your_id_here
+RAISED_CELL=Sheet1!B2</pre>
+      <p style="font-size:.65rem;color:var(--smoke);margin-top:.6rem;line-height:1.5;">
+        Then restart Flask. The cell value will be read every 60 seconds and used as the "raised" amount automatically.
+        Until configured, the manual value below is used.
+      </p>
+    </div>
+  </div>
+
   <!-- Update form -->
   <div class="form-card">
     <div class="form-title">Update Campaign</div>
@@ -288,13 +351,13 @@
       <div class="hint">Total amount you are raising towards</div>
     </div>
 
-    <div class="field">
-      <label for="raisedInput">Amount Raised</label>
+    <div class="field" id="raisedField">
+      <label for="raisedInput">Amount Raised <span id="raisedSourceTag" style="font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);margin-left:.4rem;">(manual fallback)</span></label>
       <div class="input-wrap">
         <span class="input-prefix">$</span>
         <input type="number" id="raisedInput" min="0" placeholder="0">
       </div>
-      <div class="hint">Current total donations received</div>
+      <div class="hint" id="raisedHint">Used when Google Sheets is not configured or unavailable</div>
     </div>
 
     <div class="btn-row">
@@ -502,12 +565,90 @@ async function loadData() {
     goal = data.goal; raised = data.raised;
     document.getElementById('goalInput').value   = goal;
     document.getElementById('raisedInput').value = raised;
+
+    // Indicate whether raised is live from Sheets
+    if (data.sheets_source) {
+      document.getElementById('raisedSourceTag').textContent = '(live from Google Sheets)';
+      document.getElementById('raisedSourceTag').style.color = 'var(--green)';
+      document.getElementById('raisedHint').textContent = 'Value is being read live from your Google Sheet cell';
+      document.getElementById('raisedInput').style.opacity = '0.5';
+    } else {
+      document.getElementById('raisedSourceTag').textContent = '(manual)';
+      document.getElementById('raisedSourceTag').style.color = 'var(--smoke)';
+      document.getElementById('raisedHint').textContent = 'Used when Google Sheets is not configured or unavailable';
+      document.getElementById('raisedInput').style.opacity = '1';
+    }
+
     updatePreview();
     setStatus('');
   } catch(e) { setStatus('Failed to load', 'error'); }
 }
 
-// Live preview as user types
+async function loadSheetsStatus() {
+  try {
+    const res  = await fetch('/api/sheets/status');
+    const data = await res.json();
+
+    if (data.configured) {
+      document.getElementById('sheetsConfigured').style.display    = 'block';
+      document.getElementById('sheetsNotConfigured').style.display = 'none';
+
+      const dot      = document.getElementById('sheetsDot');
+      const statusTx = document.getElementById('sheetsStatusText');
+      const errBox   = document.getElementById('sheetsError');
+
+      if (data.last_error) {
+        dot.style.background      = '#ff4500';
+        dot.style.boxShadow       = '0 0 6px rgba(255,69,0,0.8)';
+        statusTx.textContent      = 'Connection error';
+        statusTx.style.color      = '#ff8c8c';
+        errBox.style.display      = 'block';
+        errBox.textContent        = data.last_error;
+      } else {
+        dot.style.background      = '#4ade80';
+        dot.style.boxShadow       = '0 0 6px rgba(74,222,128,0.8)';
+        statusTx.textContent      = data.cached_value !== null
+          ? `Live · $${Number(data.cached_value).toLocaleString()}`
+          : 'Connected';
+        statusTx.style.color      = 'var(--ash)';
+        errBox.style.display      = 'none';
+      }
+
+      document.getElementById('sheetsCell').textContent      = data.raised_cell || '—';
+      document.getElementById('sheetsValue').textContent     = data.cached_value !== null
+        ? '$' + Number(data.cached_value).toLocaleString() : '—';
+      document.getElementById('sheetsCacheSecs').textContent = data.cache_seconds;
+      document.getElementById('sheetsMode').textContent      = data.mode;
+
+      const sid  = data.spreadsheet_id;
+      const link = document.getElementById('sheetsLink');
+      link.href        = `https://docs.google.com/spreadsheets/d/${sid}/edit`;
+      link.textContent = sid.length > 30 ? sid.slice(0, 30) + '…' : sid;
+
+    } else {
+      document.getElementById('sheetsConfigured').style.display    = 'none';
+      document.getElementById('sheetsNotConfigured').style.display = 'block';
+    }
+  } catch(e) {
+    // silently fail — Sheets panel just stays as-is
+  }
+}
+
+async function refreshSheets() {
+  const btn = document.getElementById('refreshBtn');
+  btn.textContent = '↻ Fetching…'; btn.disabled = true;
+  try {
+    await fetch('/api/sheets/refresh', { method: 'POST' });
+    await Promise.all([loadSheetsStatus(), loadData()]);
+    btn.textContent = '✓ Done';
+    setTimeout(() => { btn.textContent = '↻ Refresh'; btn.disabled = false; }, 1500);
+  } catch(e) {
+    btn.textContent = '↻ Refresh'; btn.disabled = false;
+  }
+}
+
+loadData();
+loadSheetsStatus();
 document.getElementById('goalInput').addEventListener('input', () => {
   const g = parseFloat(document.getElementById('goalInput').value) || 0;
   const r = parseFloat(document.getElementById('raisedInput').value) || 0;
@@ -566,8 +707,6 @@ async function resetData() {
   } catch(e) { setStatus('Reset failed', 'error'); }
   setTimeout(() => setStatus(''), 3000);
 }
-
-loadData();
 
 // Populate embed snippet
 (function(){
