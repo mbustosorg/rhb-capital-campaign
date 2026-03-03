@@ -63,7 +63,7 @@
   }
   .stat-block.hi::before { background:linear-gradient(to bottom,var(--flame),var(--ember)); box-shadow:0 0 8px rgba(255,140,0,.7); width:4px; }
   .stat-block.hi         { box-shadow:inset 0 0 30px rgba(255,69,0,.06),0 0 16px rgba(255,69,0,.1); }
-  .stat-label { font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; color:var(--smoke); margin-bottom:.2rem; }
+  .stat-label { font-size:.7rem; letter-spacing:.18em; text-transform:uppercase; color:white; margin-bottom:.2rem; }
   .stat-value { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; letter-spacing:.04em; line-height:1; }
   .stat-value.gold  { color:var(--gold);  text-shadow:0 0 12px rgba(255,200,0,.6); }
   .stat-value.flame { color:var(--flame); text-shadow:0 0 12px rgba(255,140,0,.7); }
@@ -266,17 +266,19 @@ let animFrame;
 const GCX = 240, GCY = 210;    // pivot centre
 const OUTER_R = 195;           // outer ring
 const INNER_R = 170;           // inner face ring
-const ARC_START = Math.PI * 0.72;   // left end  (~130°)
-const ARC_END   = Math.PI * 0.28;   // right end (~50°) — going CW through bottom would overshoot; we go the short arc
+//const ARC_START = Math.PI * 0.72;   // left end  (~130°)
+//const ARC_END   = Math.PI * 0.28;   // right end (~50°) — going CW through bottom would overshoot; we go the short arc
+const ARC_START = Math.PI * 30 / 180;   // left end  (~130°)
+const ARC_END   = Math.PI * 150 / 180;   // right end (~50°) — going CW through bottom would overshoot; we go the short arc
 // We want the needle to sweep from lower-left → lower-right through the TOP of the gauge (like the logo)
 // That means: start = 7 o'clock, end = 5 o'clock, sweeping through 12 o'clock
-const NEEDLE_START = Math.PI * 1.15;  // ~7 o'clock (210°)
-const NEEDLE_END   = Math.PI * 1.85;  // ~5 o'clock (333°) — goes CCW? No — let's use angles in standard JS:
+const NEEDLE_START = Math.PI * 1.84;  // ~7 o'clock (210°)
+const NEEDLE_END   = Math.PI * 1.15;  // ~5 o'clock (333°) — goes CCW? No — let's use angles in standard JS:
 // Actually in canvas: 0=right, PI/2=down, PI=left, 3PI/2=up
 // Logo gauge arc goes from bottom-left to bottom-right through the TOP
 // So: start ≈ 210° = 7*PI/6, end ≈ -30° = 330° = 11*PI/6, sweeping counterclockwise (anticlockwise=true)
-const SWEEP_START = (210 * Math.PI) / 180;   // 7 o'clock
-const SWEEP_END   = (330 * Math.PI) / 180;   // 5 o'clock
+const SWEEP_START = (30 * Math.PI) / 180;   // 7 o'clock
+const SWEEP_END   = (150 * Math.PI) / 180;   // 5 o'clock
 // needle angle at pct: lerp from SWEEP_START to SWEEP_END going counterclockwise
 // CCW from 210 → 90 (12 o'clock) → 330: total sweep = 360-(330-210)=240° going CCW
 
@@ -290,7 +292,7 @@ function needleAngle(pct) {
   // Standard: 210° CCW to 330° means subtracting 240° × pct
   // But canvas angles increase CW. CCW means we go:
   // 210° → 90° → 330° (CCW) = angle = 210 - 240*pct  (in degrees)
-  const deg = 210 - 240 * pct;
+  const deg = 150 + 245 * pct;
   return (deg * Math.PI) / 180;
 }
 
@@ -387,8 +389,8 @@ function drawGauge(pct) {
 
   // ── Inner arc gauge window (the rounded-rect display in the logo) ──
   // Sits in the upper half of the face, like the logo
-  const boxCX = GCX, boxCY = GCY - 55;
-  const boxW = 170, boxH = 95, boxRad = 28;
+  const boxCX = GCX, boxCY = GCY - 35;
+  const boxW = 85, boxH = 45, boxRad = 10;
   gctx.save();
   // Outer bezel
   roundRect(gctx, boxCX - boxW/2 - 5, boxCY - boxH/2 - 5, boxW + 10, boxH + 10, boxRad + 4);
@@ -426,7 +428,7 @@ function drawGauge(pct) {
   // pct readout
   gctx.font = `bold ${pct >= 1 ? 22 : 20}px "Bebas Neue", sans-serif`;
   gctx.fillStyle = pct >= 1 ? '#ff2200' : '#1a0800';
-  gctx.fillText(Math.round(pct * 100) + '%', boxCX, boxCY + 18);
+  gctx.fillText(Math.round(pct * 100) + '%', boxCX, boxCY + 10);
   gctx.restore();
 
   // ── Arc track on face (the sweep path) ──
@@ -442,7 +444,7 @@ function drawGauge(pct) {
   if (pct > 0) {
     const fillAngle = needleAngle(pct);
     gctx.beginPath();
-    gctx.arc(GCX, GCY, 125, SWEEP_START, fillAngle, true); // CCW
+    gctx.arc(GCX, GCY, 125, SWEEP_END, fillAngle, false); // CCW
     const trackGrad = gctx.createConicalGradient ? null : null;
     // Use a linear approximation — orange→red→gold based on pct
     gctx.strokeStyle = pct >= 1
@@ -543,9 +545,10 @@ function drawGauge(pct) {
 
   // ── "Red Hot Beverly" text arcs ──
   // Top arc: "Red Hot"
-  drawArcText(gctx, 'Red Hot', GCX, GCY, FACE_BG_R - 22, -Math.PI * 0.72, '#cc2200', 'bold 32px "Bebas Neue",serif', true);
+  
+  drawArcText(gctx, 'Red Hot', GCX, GCY, FACE_BG_R - 22, -Math.PI + 1.1, '#cc2200', 'bold 38px "Bebas Neue",serif', false);
   // Bottom arc: "Beverly"
-  drawArcText(gctx, 'Beverly', GCX, GCY, FACE_BG_R - 22, Math.PI * 0.28, '#cc2200', 'bold 38px "Bebas Neue",serif', false);
+  drawArcText(gctx, 'Beverly', GCX, GCY, FACE_BG_R - 22, -Math.PI + 2.00, '#cc2200', 'bold 38px "Bebas Neue",serif', false);
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -619,6 +622,7 @@ let goal = 10000, raised = 0;
 function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
 
 function renderUI() {
+  //const pct = goal > 0 ? Math.min(raised / goal, 1) : 0;
   const pct = goal > 0 ? Math.min(raised / goal, 1) : 0;
   const remaining = Math.max(goal - raised, 0);
   document.getElementById('goalDisplay').textContent     = fmt(goal);
@@ -665,4 +669,4 @@ loadFromAPI();
 setInterval(loadFromAPI, 30000);
 </script>
 </body>
-</html>
+</html><!DOCTYPE html>
