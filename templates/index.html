@@ -351,7 +351,7 @@ function drawGauge(pct) {
     } else {
       inArc = dotDeg >= needleDegFromTop || dotDeg <= startDeg;
     }
-
+    inArc=true;
     gctx.beginPath();
     gctx.arc(dx, dy, 7, 0, Math.PI * 2);
     if (inArc) {
