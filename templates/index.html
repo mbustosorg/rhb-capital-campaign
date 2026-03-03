@@ -272,8 +272,8 @@ const ARC_START = Math.PI * 30 / 180;   // left end  (~130°)
 const ARC_END   = Math.PI * 150 / 180;   // right end (~50°) — going CW through bottom would overshoot; we go the short arc
 // We want the needle to sweep from lower-left → lower-right through the TOP of the gauge (like the logo)
 // That means: start = 7 o'clock, end = 5 o'clock, sweeping through 12 o'clock
-const NEEDLE_START = Math.PI * 1.15;  // ~7 o'clock (210°)
-const NEEDLE_END   = Math.PI * 1.85;  // ~5 o'clock (333°) — goes CCW? No — let's use angles in standard JS:
+const NEEDLE_START = Math.PI * 1.84;  // ~7 o'clock (210°)
+const NEEDLE_END   = Math.PI * 1.15;  // ~5 o'clock (333°) — goes CCW? No — let's use angles in standard JS:
 // Actually in canvas: 0=right, PI/2=down, PI=left, 3PI/2=up
 // Logo gauge arc goes from bottom-left to bottom-right through the TOP
 // So: start ≈ 210° = 7*PI/6, end ≈ -30° = 330° = 11*PI/6, sweeping counterclockwise (anticlockwise=true)
@@ -292,7 +292,7 @@ function needleAngle(pct) {
   // Standard: 210° CCW to 330° means subtracting 240° × pct
   // But canvas angles increase CW. CCW means we go:
   // 210° → 90° → 330° (CCW) = angle = 210 - 240*pct  (in degrees)
-  const deg = 150 + 210 * pct;
+  const deg = 150 + 245 * pct;
   return (deg * Math.PI) / 180;
 }
 
@@ -444,7 +444,7 @@ function drawGauge(pct) {
   if (pct > 0) {
     const fillAngle = needleAngle(pct);
     gctx.beginPath();
-    gctx.arc(GCX, GCY, 125, SWEEP_START, fillAngle, true); // CCW
+    gctx.arc(GCX, GCY, 125, SWEEP_END, fillAngle, false); // CCW
     const trackGrad = gctx.createConicalGradient ? null : null;
     // Use a linear approximation — orange→red→gold based on pct
     gctx.strokeStyle = pct >= 1
@@ -622,7 +622,8 @@ let goal = 10000, raised = 0;
 function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
 
 function renderUI() {
-  const pct = goal > 0 ? Math.min(raised / goal, 1) : 0;
+  //const pct = goal > 0 ? Math.min(raised / goal, 1) : 0;
+  const pct =  0.5;//goal > 0 ? Math.min(raised / goal, 1) : 0;
   const remaining = Math.max(goal - raised, 0);
   document.getElementById('goalDisplay').textContent     = fmt(goal);
   document.getElementById('raisedDisplay').textContent   = fmt(raised);
