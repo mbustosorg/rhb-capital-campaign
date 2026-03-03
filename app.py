@@ -30,6 +30,17 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/admin")
+def admin():
+    return render_template("admin.html")
+
+
+@app.route("/embed")
+def embed():
+    """Minimal embeddable gauge — no fire background, transparent bg, iframe-friendly."""
+    return render_template("embed.html")
+
+
 @app.route("/api/fundraiser", methods=["GET"])
 def get_fundraiser():
     """Return current goal and raised amount."""

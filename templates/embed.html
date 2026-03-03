@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Red Hot Beverly — Gauge</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: transparent;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 0.5rem;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+  canvas { display:block; width:100%; max-width:360px; }
+  .stats {
+    display: flex; gap: 1rem; justify-content: center;
+    margin-top: 0.5rem; flex-wrap: wrap;
+  }
+  .stat {
+    text-align: center; background: rgba(10,5,2,0.85);
+    border: 1px solid #3a2010; border-radius: 6px; padding: 0.4rem 0.8rem;
+    min-width: 80px;
+  }
+  .stat-lbl { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: #4a3828; }
+  .stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: #ffe8cc; }
+  .stat-val.flame { color: #ff8c00; }
+  .stat-val.gold  { color: #ffcc00; }
+  .link { margin-top: 0.6rem; font-size: 0.65rem; color: #4a3828; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; }
+  .link:hover { color: #c8aa8a; }
+</style>
+</head>
+<body>
+<canvas id="g" width="360" height="224"></canvas>
+<div class="stats">
+  <div class="stat"><div class="stat-lbl">Goal</div><div class="stat-val gold" id="eGoal">—</div></div>
+  <div class="stat"><div class="stat-lbl">Raised</div><div class="stat-val flame" id="eRaised">—</div></div>
+  <div class="stat"><div class="stat-lbl">Funded</div><div class="stat-val" id="ePct">—</div></div>
+</div>
+<a class="link" href="/" target="_blank">Red Hot Beverly ↗</a>
+
+<script>
+const c = document.getElementById('g');
+const ctx = c.getContext('2d');
+const CX = 180, CY = 158;
+const OUTER_R = 146, FACE_R = 127;
+const SWEEP_START = (210*Math.PI)/180;
+const SWEEP_END   = (330*Math.PI)/180;
+const DOT_COUNT = 14;
+
+function needleAngle(p){ return ((210 - 240*p) * Math.PI)/180; }
+
+function rr(cx2,x,y,w,h,r){
+  cx2.beginPath(); cx2.moveTo(x+r,y); cx2.lineTo(x+w-r,y);
+  cx2.quadraticCurveTo(x+w,y,x+w,y+r); cx2.lineTo(x+w,y+h-r);
+  cx2.quadraticCurveTo(x+w,y+h,x+w-r,y+h); cx2.lineTo(x+r,y+h);
+  cx2.quadraticCurveTo(x,y+h,x,y+h-r); cx2.lineTo(x,y+r);
+  cx2.quadraticCurveTo(x,y,x+r,y); cx2.closePath();
+}
+
+function arcText(cx2,text,r,startAng,color,font,top){
+  cx2.save(); cx2.font=font; cx2.fillStyle=color; cx2.textAlign='center'; cx2.textBaseline='middle';
+  const chars=text.split('');
+  const ws=chars.map(ch=>cx2.measureText(ch).width);
+  const total=ws.reduce((a,b)=>a+b,0)+(chars.length-1)*1.5;
+  let ang=startAng-total/(2*r);
+  for(let i=0;i<chars.length;i++){
+    const ca=ang+ws[i]/(2*r);
+    cx2.save();
+    cx2.translate(CX+Math.cos(ca)*r, CY+Math.sin(ca)*r);
+    cx2.rotate(ca+(top?-Math.PI/2:Math.PI/2));
+    cx2.shadowColor='rgba(0,0,0,0.4)'; cx2.shadowBlur=3;
+    cx2.fillText(chars[i],0,0); cx2.restore();
+    ang+=ws[i]/r+1.5/r;
+  }
+  cx2.restore();
+}
+
+function draw(pct){
+  ctx.clearRect(0,0,c.width,c.height);
+
+  // Outer glow
+  ctx.save(); ctx.shadowColor=`rgba(255,80,0,${0.1+pct*0.3})`; ctx.shadowBlur=20;
+  ctx.beginPath(); ctx.arc(CX,CY,OUTER_R+4,0,Math.PI*2);
+  ctx.strokeStyle=`rgba(255,${60+pct*80},0,${0.15+pct*0.35})`; ctx.lineWidth=2; ctx.stroke();
+  ctx.restore();
+
+  // Outer ring
+  ctx.beginPath(); ctx.arc(CX,CY,OUTER_R,0,Math.PI*2);
+  const rg=ctx.createRadialGradient(CX-30,CY-30,OUTER_R*.5,CX,CY,OUTER_R);
+  rg.addColorStop(0,'#201008'); rg.addColorStop(1,'#080300');
+  ctx.fillStyle=rg; ctx.fill();
+
+  // Dots
+  const needleDeg=((needleAngle(pct)*180/Math.PI)+90+360)%360;
+  for(let i=0;i<DOT_COUNT;i++){
+    const ang=(i/DOT_COUNT)*Math.PI*2-Math.PI/2;
+    const dotR=OUTER_R-10;
+    const dx=CX+Math.cos(ang)*dotR, dy=CY+Math.sin(ang)*dotR;
+    const dotDeg=((ang*180/Math.PI)+90+360)%360;
+    const startD=210;
+    let lit=(needleDeg<=startD)?(dotDeg>=needleDeg&&dotDeg<=startD):(dotDeg>=needleDeg||dotDeg<=startD);
+    ctx.beginPath(); ctx.arc(dx,dy,5.5,0,Math.PI*2);
+    if(lit){
+      const lg=ctx.createRadialGradient(dx-1,dy-1,0,dx,dy,5.5);
+      lg.addColorStop(0,'#ff8800'); lg.addColorStop(1,'#aa1100');
+      ctx.fillStyle=lg; ctx.shadowColor='#ff4400'; ctx.shadowBlur=10;
+    } else { ctx.fillStyle='#150800'; ctx.shadowBlur=0; }
+    ctx.fill(); ctx.shadowBlur=0;
+  }
+
+  // Face
+  ctx.beginPath(); ctx.arc(CX,CY,FACE_R,0,Math.PI*2);
+  const fg=ctx.createRadialGradient(CX-20,CY-40,8,CX,CY,FACE_R);
+  fg.addColorStop(0,'#fff8f0'); fg.addColorStop(1,'#e8d0b0');
+  ctx.fillStyle=fg; ctx.fill();
+  ctx.strokeStyle='#ccaa80'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // Box
+  const bW=126,bH=70,bR=20,bCX=CX,bCY=CY-40;
+  rr(ctx,bCX-bW/2-4,bCY-bH/2-4,bW+8,bH+8,bR+3);
+  ctx.fillStyle='#150800'; ctx.fill();
+  rr(ctx,bCX-bW/2,bCY-bH/2,bW,bH,bR);
+  ctx.fillStyle='#f8f0e0'; ctx.fill();
+  ctx.strokeStyle='#8a6030'; ctx.lineWidth=1; ctx.stroke();
+
+  ctx.font='bold 11px "Barlow Condensed",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle = pct>=1?'#cc2200':'#4a2800';
+  ctx.fillText(pct>=1?'OVERCHARGED':'overcharged', bCX, bCY-8);
+  ctx.font=`bold ${pct>=1?18:16}px "Bebas Neue",sans-serif`;
+  ctx.fillStyle=pct>=1?'#ff2200':'#1a0800';
+  ctx.fillText(Math.round(pct*100)+'%', bCX, bCY+16);
+
+  // Arc track
+  ctx.beginPath(); ctx.arc(CX,CY,93,SWEEP_START,SWEEP_END,true);
+  ctx.strokeStyle='rgba(180,120,60,0.25)'; ctx.lineWidth=10; ctx.lineCap='round'; ctx.stroke();
+  if(pct>0){
+    ctx.beginPath(); ctx.arc(CX,CY,93,SWEEP_START,needleAngle(pct),true);
+    ctx.strokeStyle=pct>=1?'#ffcc00':`hsl(${40-pct*30},100%,52%)`;
+    ctx.lineWidth=10; ctx.lineCap='round';
+    ctx.shadowColor=`rgba(255,${100-pct*60},0,0.6)`; ctx.shadowBlur=8; ctx.stroke(); ctx.shadowBlur=0;
+  }
+
+  // Needle
+  const na=needleAngle(pct), nL=88;
+  const ntx=CX+Math.cos(na)*nL, nty=CY+Math.sin(na)*nL;
+  const tx=CX+Math.cos(na+Math.PI)*16, ty=CY+Math.sin(na+Math.PI)*16;
+  const pa=na+Math.PI/2;
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,0.4)'; ctx.shadowBlur=5;
+  ctx.shadowOffsetX=2; ctx.shadowOffsetY=2;
+  ctx.beginPath();
+  ctx.moveTo(tx,ty);
+  ctx.lineTo(CX+Math.cos(pa)*3.5,CY+Math.sin(pa)*3.5);
+  ctx.lineTo(ntx,nty);
+  ctx.lineTo(CX-Math.cos(pa)*3.5,CY-Math.sin(pa)*3.5);
+  ctx.closePath(); ctx.fillStyle='#0f0705'; ctx.fill(); ctx.restore();
+
+  // Hub
+  ctx.beginPath(); ctx.arc(CX,CY,13,0,Math.PI*2);
+  const hg=ctx.createRadialGradient(CX-3,CY-3,0,CX,CY,13);
+  hg.addColorStop(0,'#4a3020'); hg.addColorStop(1,'#0a0500');
+  ctx.fillStyle=hg; ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=6; ctx.fill(); ctx.shadowBlur=0;
+  ctx.beginPath(); ctx.arc(CX,CY,4,0,Math.PI*2); ctx.fillStyle='#f0c060'; ctx.fill();
+
+  // Text arcs
+  arcText(ctx,'Red Hot',FACE_R-16,-Math.PI*0.72,'#cc2200','bold 24px "Bebas Neue",serif',true);
+  arcText(ctx,'Beverly',FACE_R-16,Math.PI*0.28,'#cc2200','bold 28px "Bebas Neue",serif',false);
+}
+
+let cur=0, tgt=0, af;
+function animate(){
+  const d=tgt-cur;
+  if(Math.abs(d)>0.0005){ cur+=d*0.05; draw(cur); af=requestAnimationFrame(animate); }
+  else { cur=tgt; draw(cur); }
+}
+function set(p){ tgt=Math.min(1,Math.max(0,p)); cancelAnimationFrame(af); animate(); }
+
+function fmt(n){ return '$'+Math.round(n).toLocaleString(); }
+
+async function load(){
+  try {
+    const d=await(await fetch('/api/fundraiser')).json();
+    document.getElementById('eGoal').textContent  =fmt(d.goal);
+    document.getElementById('eRaised').textContent=fmt(d.raised);
+    const p=d.goal>0?Math.min(d.raised/d.goal,1):0;
+    document.getElementById('ePct').textContent=Math.round(p*100)+'%';
+    set(p);
+  } catch(e){}
+}
+
+draw(0); load(); setInterval(load,30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Red Hot Beverly</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:     #050200;
+    --coal:   #1a1008;
+    --ember:  #ff4500;
+    --flame:  #ff8c00;
+    --gold:   #ffcc00;
+    --ash:    #c8aa8a;
+    --smoke:  #4a3828;
+    --border: #3a2010;
+    --text:   #ffe8cc;
+    --green:  #4ade80;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem 3rem;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  #fireCanvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+  .container {
+    position: relative; z-index: 2;
+    max-width: 480px; width: 100%;
+  }
+
+  /* ── Header ── */
+  .back-link {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--smoke); text-decoration: none;
+    border: 1px solid var(--border); border-radius: 4px; padding: 0.3rem 0.8rem;
+    margin-bottom: 1.5rem; transition: color 0.2s, border-color 0.2s;
+  }
+  .back-link:hover { color: var(--ash); border-color: var(--smoke); }
+  .back-link::before { content: '←'; }
+
+  .header { text-align: center; margin-bottom: 2rem; }
+
+  .eyebrow {
+    font-size: 0.68rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--ember); margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.8rem, 7vw, 2.8rem);
+    line-height: 1; letter-spacing: 0.06em; color: var(--text);
+    text-shadow: 0 0 20px rgba(255,140,0,0.7), 0 0 50px rgba(255,69,0,0.4);
+  }
+  h1 span { color: var(--gold); }
+
+  .subtitle { margin-top: 0.5rem; color: var(--smoke); font-size: 0.9rem; letter-spacing: 0.05em; }
+
+  /* ── Live preview strip ── */
+  .preview-strip {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.75rem; margin-bottom: 1.5rem;
+  }
+
+  .preview-stat {
+    background: linear-gradient(135deg, rgba(26,16,8,0.95), rgba(12,6,2,0.95));
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.75rem 0.9rem; position: relative; overflow: hidden;
+    backdrop-filter: blur(8px);
+  }
+  .preview-stat::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(to bottom, var(--gold), var(--ember));
+  }
+  .preview-stat.hi::before {
+    background: linear-gradient(to bottom, var(--flame), var(--ember));
+    box-shadow: 0 0 8px rgba(255,140,0,0.6);
+  }
+  .p-label { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--smoke); margin-bottom: 0.2rem; }
+  .p-value { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.04em; line-height: 1; }
+  .p-value.gold  { color: var(--gold);  text-shadow: 0 0 12px rgba(255,200,0,0.5); }
+  .p-value.flame { color: var(--flame); text-shadow: 0 0 12px rgba(255,140,0,0.6); }
+
+  /* Progress bar */
+  .progress-wrap {
+    margin-bottom: 1.5rem;
+    background: rgba(26,16,8,0.9);
+    border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.1rem;
+    backdrop-filter: blur(8px);
+  }
+  .progress-label {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--smoke); margin-bottom: 0.6rem;
+  }
+  .progress-label span { color: var(--flame); }
+  .progress-track {
+    height: 10px; background: rgba(58,32,16,0.8);
+    border-radius: 5px; overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(to right, #ff1a00, #ff5500, #ffaa00, #ffee00);
+    border-radius: 5px;
+    transition: width 0.8s cubic-bezier(0.34, 1.2, 0.64, 1);
+    width: 0%;
+    box-shadow: 0 0 12px rgba(255,80,0,0.7);
+  }
+
+  /* ── Form card ── */
+  .form-card {
+    background: linear-gradient(135deg, rgba(22,12,4,0.97), rgba(10,5,1,0.97));
+    border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 50px rgba(255,69,0,0.08);
+    margin-bottom: 1.25rem;
+  }
+
+  .form-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.12em;
+    color: var(--ash); margin-bottom: 1.1rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .form-title::before { content: '🔥'; }
+
+  .field { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+  .field:last-of-type { margin-bottom: 0; }
+
+  label {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--smoke);
+  }
+
+  .input-wrap { position: relative; }
+  .input-prefix {
+    position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%);
+    color: var(--smoke); font-size: 1rem; pointer-events: none;
+  }
+
+  input[type="number"] {
+    background: rgba(8,4,1,0.9); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem;
+    letter-spacing: 0.05em;
+    padding: 0.6rem 0.85rem 0.6rem 1.6rem;
+    width: 100%; transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input[type="number"]:focus { border-color: var(--ember); box-shadow: 0 0 16px rgba(255,69,0,0.35); }
+
+  .hint { font-size: 0.65rem; color: var(--smoke); letter-spacing: 0.05em; margin-top: 0.25rem; }
+
+  /* ── Buttons ── */
+  .btn-row { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+
+  .btn {
+    flex: 1; padding: 0.9rem;
+    background: linear-gradient(135deg, #aa1800, #ff3300, #ff6600, #ff9900);
+    color: #fff5e6; font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem;
+    letter-spacing: 0.12em; border: none; border-radius: 6px; cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 4px 24px rgba(255,69,0,0.45), 0 0 50px rgba(255,69,0,0.15);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    animation: btnGlow 2s ease-in-out infinite alternate;
+  }
+  @keyframes btnGlow {
+    from { box-shadow: 0 4px 24px rgba(255,69,0,0.45), 0 0 50px rgba(255,69,0,0.15); }
+    to   { box-shadow: 0 4px 36px rgba(255,100,0,0.65), 0 0 80px rgba(255,80,0,0.3); }
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn:active { transform: translateY(1px); }
+
+  .btn.secondary {
+    flex: 0 0 auto; padding: 0.9rem 1.1rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--smoke); font-size: 0.85rem;
+    box-shadow: none; animation: none;
+  }
+  .btn.secondary:hover { border-color: var(--smoke); color: var(--ash); transform: none; box-shadow: none; }
+
+  /* ── Status ── */
+  .status-bar {
+    text-align: center; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase;
+    margin-top: 1rem; min-height: 1.4em; color: transparent; transition: color 0.25s;
+  }
+  .status-bar.saving  { color: var(--flame); }
+  .status-bar.saved   { color: var(--green); }
+  .status-bar.error   { color: var(--ember); }
+
+  /* ── API card ── */
+  .api-card {
+    background: rgba(8,4,1,0.7); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+  .api-card summary {
+    cursor: pointer; padding: 0.9rem 1.1rem;
+    font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--smoke); list-style: none; user-select: none;
+    display: flex; align-items: center; gap: 0.5rem;
+    transition: color 0.2s;
+  }
+  .api-card summary:hover { color: var(--ash); }
+  .api-card summary::before { content: '▶'; font-size: 0.55rem; }
+  details[open] .api-card summary::before { content: '▼'; }
+  .api-body { padding: 0 1.1rem 1.1rem; }
+  .api-endpoint {
+    margin-bottom: 0.85rem; padding: 0.75rem;
+    background: rgba(4,2,1,0.8); border-radius: 6px; border: 1px solid var(--border);
+  }
+  .api-endpoint:last-child { margin-bottom: 0; }
+  .api-method { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.1em; font-size: 0.85rem; }
+  .api-method.get  { color: var(--green); }
+  .api-method.post { color: var(--flame); }
+  .api-path { font-family: 'Courier New', monospace; font-size: 0.78rem; color: var(--ash); margin-left: 0.5rem; }
+  .api-desc { font-size: 0.72rem; color: var(--smoke); margin-top: 0.3rem; }
+  .api-example {
+    margin-top: 0.4rem; font-family: 'Courier New', monospace; font-size: 0.7rem;
+    color: var(--ash); background: rgba(0,0,0,0.3); border-radius: 4px; padding: 0.4rem 0.6rem;
+    white-space: pre-wrap; word-break: break-all;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="fireCanvas"></canvas>
+
+<div class="container">
+  <a href="/" class="back-link">Back to Display</a>
+
+  <div class="header">
+    <div class="eyebrow">🔥 Admin Panel</div>
+    <h1>Red Hot <span>Beverly</span></h1>
+    <p class="subtitle">Base Vehicle Replacement Capital Campaign</p>
+  </div>
+
+  <!-- Live preview -->
+  <div class="preview-strip">
+    <div class="preview-stat">
+      <div class="p-label">Goal</div>
+      <div class="p-value gold" id="previewGoal">—</div>
+    </div>
+    <div class="preview-stat hi">
+      <div class="p-label">Raised</div>
+      <div class="p-value flame" id="previewRaised">—</div>
+    </div>
+    <div class="preview-stat">
+      <div class="p-label">% Funded</div>
+      <div class="p-value" id="previewPct">—</div>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-wrap">
+    <div class="progress-label">
+      Progress <span id="progressLabel">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- Update form -->
+  <div class="form-card">
+    <div class="form-title">Update Campaign</div>
+
+    <div class="field">
+      <label for="goalInput">Fundraising Goal</label>
+      <div class="input-wrap">
+        <span class="input-prefix">$</span>
+        <input type="number" id="goalInput" min="1" placeholder="10000">
+      </div>
+      <div class="hint">Total amount you are raising towards</div>
+    </div>
+
+    <div class="field">
+      <label for="raisedInput">Amount Raised</label>
+      <div class="input-wrap">
+        <span class="input-prefix">$</span>
+        <input type="number" id="raisedInput" min="0" placeholder="0">
+      </div>
+      <div class="hint">Current total donations received</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" onclick="saveAndUpdate()">🔥 Save Changes</button>
+      <button class="btn secondary" onclick="resetData()">Reset</button>
+    </div>
+
+    <div class="status-bar" id="statusBar"></div>
+  </div>
+
+  <!-- Embed snippet -->
+  <div class="form-card" style="margin-bottom:1.25rem;">
+    <div class="form-title" style="margin-bottom:.75rem;">📎 Embeddable Widget</div>
+    <p style="font-size:.8rem;color:var(--ash);letter-spacing:.04em;line-height:1.5;margin-bottom:.9rem;">
+      Paste this iframe anywhere — a website, newsletter, or digital sign — to show the live gauge. It auto-refreshes every 30 seconds.
+    </p>
+    <div style="position:relative;">
+      <textarea id="embedCode" readonly
+        style="width:100%;height:90px;background:rgba(4,2,1,.9);border:1px solid var(--border);
+               border-radius:6px;color:var(--ash);font-family:'Courier New',monospace;font-size:.72rem;
+               padding:.65rem .8rem;resize:none;outline:none;line-height:1.6;"
+      ></textarea>
+      <button onclick="copyEmbed()" id="copyBtn"
+        style="position:absolute;top:.5rem;right:.5rem;background:rgba(255,69,0,.15);
+               border:1px solid rgba(255,69,0,.4);border-radius:4px;color:var(--flame);
+               font-family:'Barlow Condensed',sans-serif;font-size:.7rem;letter-spacing:.1em;
+               text-transform:uppercase;padding:.25rem .65rem;cursor:pointer;">
+        Copy
+      </button>
+    </div>
+    <p style="font-size:.65rem;color:var(--smoke);letter-spacing:.08em;margin-top:.5rem;">
+      Replace <code style="color:var(--ash)">https://your-server.com</code> with your actual host URL.
+    </p>
+  </div>
+
+  <!-- API reference -->
+  <details>
+    <div class="api-card">
+      <summary>API Reference</summary>
+      <div class="api-body">
+        <div class="api-endpoint">
+          <div><span class="api-method get">GET</span><span class="api-path">/api/fundraiser</span></div>
+          <div class="api-desc">Returns current goal and raised amount</div>
+          <div class="api-example">curl http://localhost:5000/api/fundraiser</div>
+        </div>
+        <div class="api-endpoint">
+          <div><span class="api-method post">POST</span><span class="api-path">/api/fundraiser</span></div>
+          <div class="api-desc">Update goal and/or raised. Send any combination of fields.</div>
+          <div class="api-example">curl -X POST http://localhost:5000/api/fundraiser \
+  -H "Content-Type: application/json" \
+  -d '{"goal": 50000, "raised": 12500}'</div>
+        </div>
+        <div class="api-endpoint">
+          <div><span class="api-method post">POST</span><span class="api-path">/api/fundraiser/reset</span></div>
+          <div class="api-desc">Reset goal to 10,000 and raised to 0</div>
+          <div class="api-example">curl -X POST http://localhost:5000/api/fundraiser/reset</div>
+        </div>
+      </div>
+    </div>
+  </details>
+</div>
+
+<script>
+// ── Minimal fire background (fewer fireballs, more atmospheric for admin) ──
+const canvas = document.getElementById('fireCanvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+
+const particles = [];
+
+class Fireball {
+  constructor(x, y, big = false) {
+    this.x = x; this.y = y;
+    this.vx = (Math.random() - 0.5) * (big ? 3 : 2);
+    this.vy = -(1.5 + Math.random() * (big ? 5 : 3));
+    this.radius = big ? 25 + Math.random() * 35 : 10 + Math.random() * 18;
+    this.maxRadius = this.radius * 1.5;
+    this.life = 1; this.decay = 0.014 + Math.random() * 0.016;
+    this.expanding = true; this.hue = 15 + Math.random() * 25;
+    this.bright = 55 + Math.random() * 20;
+    this.wobble = Math.random() * Math.PI * 2;
+    this.wobbleSpeed = 0.08 + Math.random() * 0.1;
+    for (let i = 0; i < Math.floor(this.radius / 5); i++) particles.push(new Ember(this.x, this.y, true));
+  }
+  update() {
+    this.wobble += this.wobbleSpeed;
+    this.x += this.vx + Math.sin(this.wobble) * 0.5;
+    this.y += this.vy; this.vy += 0.04; this.vx *= 0.98; this.life -= this.decay;
+    if (this.expanding) { this.radius += 1.2; if (this.radius >= this.maxRadius) this.expanding = false; }
+    else this.radius *= 0.97;
+  }
+  draw() {
+    const a = Math.max(0, this.life); const r = Math.max(1, this.radius);
+    const halo = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 2.2);
+    halo.addColorStop(0, `hsla(${this.hue},100%,${this.bright}%,${a*0.2})`);
+    halo.addColorStop(1, 'hsla(20,30%,15%,0)');
+    ctx.beginPath(); ctx.arc(this.x, this.y, r * 2.2, 0, Math.PI*2);
+    ctx.fillStyle = halo; ctx.fill();
+    const grad = ctx.createRadialGradient(this.x-r*0.2, this.y-r*0.2, 0, this.x, this.y, r);
+    const lp = Math.min(1, this.life*1.5);
+    grad.addColorStop(0,    `hsla(55,100%,95%,${a*lp})`);
+    grad.addColorStop(0.2,  `hsla(40,100%,75%,${a*lp})`);
+    grad.addColorStop(0.5,  `hsla(${this.hue+10},100%,${this.bright+10}%,${a})`);
+    grad.addColorStop(0.8,  `hsla(${this.hue},100%,${this.bright}%,${a*0.8})`);
+    grad.addColorStop(1,    'hsla(0,50%,10%,0)');
+    ctx.beginPath(); ctx.arc(this.x, this.y, r, 0, Math.PI*2);
+    ctx.fillStyle = grad; ctx.fill();
+  }
+}
+
+class Ember {
+  constructor(x, y, fromBall = false) {
+    this.x = x ?? Math.random() * W; this.y = y ?? H + 5;
+    this.vx = (Math.random()-0.5) * (fromBall ? 3.5 : 1.2);
+    this.vy = fromBall ? -(1+Math.random()*4) : -(1+Math.random()*3);
+    this.size = fromBall ? 1+Math.random()*2.5 : 0.6+Math.random()*1.8;
+    this.life = 1; this.decay = fromBall ? 0.016+Math.random()*0.02 : 0.005+Math.random()*0.01;
+    this.hue = 20 + Math.random() * 30;
+  }
+  update() {
+    this.x += this.vx + Math.sin(Date.now()*0.003+this.y)*0.4;
+    this.y += this.vy; this.vy += 0.012; this.life -= this.decay;
+  }
+  draw() {
+    const a = Math.max(0, this.life);
+    ctx.save(); ctx.globalAlpha = a*0.85;
+    ctx.shadowBlur = 7; ctx.shadowColor = `hsl(${this.hue},100%,60%)`;
+    ctx.fillStyle = `hsl(${this.hue},100%,${50+this.life*30}%)`;
+    ctx.beginPath(); ctx.arc(this.x, this.y, this.size*Math.max(0.1,this.life), 0, Math.PI*2);
+    ctx.fill(); ctx.restore();
+  }
+}
+
+class FlameColumn {
+  constructor(x) { this.x = x; this.phase = Math.random()*Math.PI*2; this.speed = 0.02+Math.random()*0.025; this.height = 0.2+Math.random()*0.25; this.width = 80+Math.random()*110; }
+  draw(t) {
+    const f = 1 + Math.sin(t*this.speed+this.phase)*0.12;
+    const h = H*this.height*f;
+    const grad = ctx.createLinearGradient(this.x, H, this.x, H-h);
+    grad.addColorStop(0,'rgba(255,80,0,0.45)'); grad.addColorStop(0.3,'rgba(255,120,0,0.28)');
+    grad.addColorStop(0.65,'rgba(255,180,0,0.12)'); grad.addColorStop(1,'rgba(255,220,0,0)');
+    ctx.save(); ctx.filter=`blur(22px)`;
+    ctx.beginPath(); ctx.ellipse(this.x, H, this.width/2, h, 0, 0, Math.PI*2);
+    ctx.fillStyle = grad; ctx.fill(); ctx.restore();
+  }
+}
+
+const flameCols = Array.from({length: 6}, (_, i) => new FlameColumn(W * (i/5)));
+for (let i = 0; i < 40; i++) { const e = new Ember(); e.y = Math.random()*H; e.life = Math.random(); particles.push(e); }
+
+let lastBall = 0, T = 0;
+function loop(ts) {
+  T = ts; ctx.clearRect(0,0,W,H);
+  const bg = ctx.createLinearGradient(0,H,0,H-H*0.15);
+  bg.addColorStop(0,'rgba(255,50,0,0.18)'); bg.addColorStop(1,'rgba(255,50,0,0)');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+  for (const c of flameCols) c.draw(T);
+  if (Math.random() < 0.5) particles.push(new Ember());
+  if (T - lastBall > 1200 + Math.random()*1800) { lastBall = T; particles.push(new Fireball(Math.random()*W, H+10, Math.random()<0.2)); }
+  const smoke=[], embers=[], balls=[];
+  for (let i=particles.length-1; i>=0; i--) {
+    particles[i].update();
+    if (particles[i].life<=0) { particles.splice(i,1); continue; }
+    if (particles[i] instanceof Fireball) balls.push(particles[i]);
+    else embers.push(particles[i]);
+  }
+  for (const p of embers) p.draw();
+  for (const p of balls)  p.draw();
+  while (particles.length > 400) particles.shift();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+document.addEventListener('click', e => {
+  if (e.target.closest('input, button, a, details')) return;
+  for (let i=0; i<3; i++) particles.push(new Fireball(e.clientX+(Math.random()-0.5)*30, e.clientY+(Math.random()-0.5)*20, i===0));
+});
+
+// ── Admin logic ──────────────────────────────────────────────────────
+let goal = 10000, raised = 0;
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+
+function setStatus(msg, type='') {
+  const el = document.getElementById('statusBar');
+  el.textContent = msg; el.className = 'status-bar ' + type;
+}
+
+function updatePreview() {
+  const pct = goal > 0 ? Math.min(raised / goal * 100, 100) : 0;
+  document.getElementById('previewGoal').textContent   = fmt(goal);
+  document.getElementById('previewRaised').textContent = fmt(raised);
+  document.getElementById('previewPct').textContent    = Math.round(pct) + '%';
+  document.getElementById('progressFill').style.width  = pct + '%';
+  document.getElementById('progressLabel').textContent  = Math.round(pct) + '%';
+}
+
+async function loadData() {
+  setStatus('Loading…', 'saving');
+  try {
+    const res = await fetch('/api/fundraiser');
+    const data = await res.json();
+    goal = data.goal; raised = data.raised;
+    document.getElementById('goalInput').value   = goal;
+    document.getElementById('raisedInput').value = raised;
+    updatePreview();
+    setStatus('');
+  } catch(e) { setStatus('Failed to load', 'error'); }
+}
+
+// Live preview as user types
+document.getElementById('goalInput').addEventListener('input', () => {
+  const g = parseFloat(document.getElementById('goalInput').value) || 0;
+  const r = parseFloat(document.getElementById('raisedInput').value) || 0;
+  goal = g; raised = r; updatePreview();
+});
+document.getElementById('raisedInput').addEventListener('input', () => {
+  const g = parseFloat(document.getElementById('goalInput').value) || 0;
+  const r = parseFloat(document.getElementById('raisedInput').value) || 0;
+  goal = g; raised = r; updatePreview();
+});
+
+async function saveAndUpdate() {
+  goal   = parseFloat(document.getElementById('goalInput').value)   || 10000;
+  raised = parseFloat(document.getElementById('raisedInput').value) || 0;
+  raised = Math.min(raised, goal * 2);
+  updatePreview();
+
+  // Fireball burst from save button
+  const btn = document.querySelector('.btn');
+  const rect = btn.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+  for (let i = 0; i < 7; i++) particles.push(new Fireball(cx+(Math.random()-0.5)*60, cy+(Math.random()-0.5)*20, i < 2));
+
+  setStatus('Saving…', 'saving');
+  try {
+    const res = await fetch('/api/fundraiser', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ goal, raised })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      goal = data.goal; raised = data.raised;
+      document.getElementById('goalInput').value   = goal;
+      document.getElementById('raisedInput').value = raised;
+      updatePreview();
+      setStatus('Saved ✓', 'saved');
+    } else {
+      setStatus(data.error || 'Save failed', 'error');
+    }
+  } catch(e) { setStatus('Save error', 'error'); }
+  setTimeout(() => setStatus(''), 3000);
+}
+
+async function resetData() {
+  if (!confirm('Reset goal to $10,000 and raised to $0?')) return;
+  setStatus('Resetting…', 'saving');
+  try {
+    const res = await fetch('/api/fundraiser/reset', { method: 'POST' });
+    const data = await res.json();
+    goal = data.goal; raised = data.raised;
+    document.getElementById('goalInput').value   = goal;
+    document.getElementById('raisedInput').value = raised;
+    updatePreview();
+    setStatus('Reset ✓', 'saved');
+  } catch(e) { setStatus('Reset failed', 'error'); }
+  setTimeout(() => setStatus(''), 3000);
+}
+
+loadData();
+
+// Populate embed snippet
+(function(){
+  const host = window.location.origin;
+  const snippet = `<iframe\n  src="${host}/embed"\n  width="400"\n  height="300"\n  frameborder="0"\n  scrolling="no"\n  style="border:none;background:transparent;"\n  allowtransparency="true"\n></iframe>`;
+  const ta = document.getElementById('embedCode');
+  if (ta) ta.value = snippet;
+})();
+
+function copyEmbed(){
+  const ta = document.getElementById('embedCode');
+  ta.select(); ta.setSelectionRange(0,9999);
+  navigator.clipboard.writeText(ta.value).then(()=>{
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied ✓';
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'var(--green)';
+    setTimeout(()=>{ btn.textContent='Copy'; btn.style.color=''; btn.style.borderColor=''; },2000);
+  }).catch(()=>{ document.execCommand('copy'); });
+}
+</script>
+</body>
+</html>
