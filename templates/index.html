@@ -623,7 +623,7 @@ function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
 
 function renderUI() {
   //const pct = goal > 0 ? Math.min(raised / goal, 1) : 0;
-  const pct =  0.5;//goal > 0 ? Math.min(raised / goal, 1) : 0;
+  const pct = goal > 0 ? Math.min(raised / goal, 1) : 0;
   const remaining = Math.max(goal - raised, 0);
   document.getElementById('goalDisplay').textContent     = fmt(goal);
   document.getElementById('raisedDisplay').textContent   = fmt(raised);
