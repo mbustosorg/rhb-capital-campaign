@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Red Hot Beverly — Capital Campaign</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050200; --ember: #ff4500; --flame: #ff8c00;
+    --gold: #ffcc00; --ash: #c8aa8a; --smoke: #4a3828;
+    --border: #3a2010; --text: #ffe8cc;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 2rem 1rem 3rem; position: relative; overflow-x: hidden;
+  }
+  #fireCanvas { position:fixed; inset:0; z-index:0; pointer-events:none; }
+  .container  { position:relative; z-index:2; max-width:560px; width:100%; }
+
+  /* header */
+  .badge {
+    display:inline-flex; align-items:center; gap:.5rem;
+    background:rgba(255,69,0,.2); border:1px solid rgba(255,69,0,.5);
+    border-radius:4px; padding:.3rem .8rem; font-size:.7rem;
+    letter-spacing:.2em; text-transform:uppercase; color:var(--flame); margin-bottom:1rem;
+  }
+  .badge::before { content:'🔥'; font-size:.9rem; }
+  .header { text-align:center; margin-bottom:1.5rem; }
+  h1 {
+    font-family:'Bebas Neue',sans-serif; font-size:clamp(2rem,8vw,3.4rem);
+    line-height:1; letter-spacing:.04em; color:var(--text);
+    text-shadow:0 0 20px rgba(255,140,0,.9),0 0 60px rgba(255,69,0,.6),2px 2px 0 rgba(0,0,0,.9);
+    animation:titlePulse 3s ease-in-out infinite alternate;
+  }
+  @keyframes titlePulse {
+    from { text-shadow:0 0 20px rgba(255,140,0,.9),0 0 60px rgba(255,69,0,.6),2px 2px 0 rgba(0,0,0,.9); }
+    to   { text-shadow:0 0 30px rgba(255,180,0,1), 0 0 80px rgba(255,100,0,.8),2px 2px 0 rgba(0,0,0,.9); }
+  }
+  h1 .hot    { color:var(--gold); }
+  h1 .sub    { display:block; font-size:68%; color:var(--ash);   letter-spacing:.08em; margin-top:.15rem; }
+  h1 .subsub { display:block; font-size:52%; color:var(--smoke); letter-spacing:.12em; }
+  .subtitle  { margin-top:.6rem; color:var(--ash); font-size:.95rem; font-weight:300; letter-spacing:.05em; }
+
+  /* ── GAUGE ── */
+  .gauge-section { display:flex; flex-direction:column; align-items:center; margin:1rem 0 .5rem; }
+  #gaugeCanvas   { display:block; max-width:480px; width:100%; cursor:crosshair; }
+
+  /* stat cards */
+  .stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.75rem; margin:.5rem 0 1rem; }
+  .stat-block {
+    background:linear-gradient(135deg,rgba(26,16,8,.95),rgba(12,6,2,.95));
+    border:1px solid var(--border); border-radius:8px; padding:.75rem .9rem;
+    position:relative; overflow:hidden; backdrop-filter:blur(8px); text-align:center;
+  }
+  .stat-block::before {
+    content:''; position:absolute; top:0; left:0; width:3px; height:100%;
+    background:linear-gradient(to bottom,var(--gold),var(--ember));
+  }
+  .stat-block.hi::before { background:linear-gradient(to bottom,var(--flame),var(--ember)); box-shadow:0 0 8px rgba(255,140,0,.7); width:4px; }
+  .stat-block.hi         { box-shadow:inset 0 0 30px rgba(255,69,0,.06),0 0 16px rgba(255,69,0,.1); }
+  .stat-label { font-size:.7rem; letter-spacing:.18em; text-transform:uppercase; color:white; margin-bottom:.2rem; }
+  .stat-value { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; letter-spacing:.04em; line-height:1; }
+  .stat-value.gold  { color:var(--gold);  text-shadow:0 0 12px rgba(255,200,0,.6); }
+  .stat-value.flame { color:var(--flame); text-shadow:0 0 12px rgba(255,140,0,.7); }
+  .pct-pill {
+    display:inline-block; background:rgba(255,80,0,.15); border:1px solid rgba(255,80,0,.4);
+    color:var(--flame); font-size:.7rem; font-weight:600; letter-spacing:.1em;
+    padding:.15rem .55rem; border-radius:3px; margin-top:.3rem; text-transform:uppercase;
+  }
+
+  /* goal reached */
+  .goal-reached {
+    text-align:center; margin-top:.75rem; padding:.85rem;
+    background:rgba(255,69,0,.12); border:1px solid rgba(255,69,0,.5);
+    border-radius:6px; color:var(--gold); font-family:'Bebas Neue',sans-serif;
+    font-size:1.2rem; letter-spacing:.15em; display:none;
+    animation:flare .8s ease-in-out infinite alternate;
+  }
+  @keyframes flare {
+    from { text-shadow:0 0 10px rgba(255,200,0,.6); }
+    to   { text-shadow:0 0 30px rgba(255,220,0,1),0 0 60px rgba(255,140,0,.8); }
+  }
+
+  /* admin link */
+  .admin-link-wrap { text-align:center; margin-top:1.5rem; }
+  .admin-link {
+    font-size:.68rem; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--smoke); text-decoration:none;
+    border:1px solid var(--border); border-radius:4px; padding:.3rem .8rem;
+    transition:color .2s,border-color .2s;
+  }
+  .admin-link:hover { color:var(--ash); border-color:var(--smoke); }
+
+  /* confetti */
+  .confetti-burst { position:fixed; inset:0; pointer-events:none; z-index:999; }
+  .confetti-piece { position:absolute; width:8px; height:8px; opacity:0; animation:cffall 1.8s ease-in forwards; }
+  @keyframes cffall {
+    0%   { transform:translateY(-20px) rotate(0deg);   opacity:1; }
+    100% { transform:translateY(100vh) rotate(720deg); opacity:0; }
+  }
+</style>
+</head>
+<body>
+<canvas id="fireCanvas"></canvas>
+
+<div class="container">
+  <div class="header">
+    <div class="badge">Capital Campaign</div>
+    <h1>
+      <span class="hot">Red Hot</span> Beverly
+      <span class="sub">Base Vehicle Replacement</span>
+      <span class="subsub">Capital Campaign</span>
+    </h1>
+    <p class="subtitle">Fueling the future — one donation at a time.</p>
+  </div>
+
+  <div class="gauge-section">
+    <canvas id="gaugeCanvas" width="480" height="300"></canvas>
+  </div>
+
+  <div class="stats">
+    <div class="stat-block">
+      <div class="stat-label">Goal</div>
+      <div class="stat-value gold" id="goalDisplay">$10,000</div>
+    </div>
+    <div class="stat-block hi">
+      <div class="stat-label">Raised</div>
+      <div class="stat-value flame" id="raisedDisplay">$0</div>
+      <div class="pct-pill" id="percentPill">0%</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-label">Remaining</div>
+      <div class="stat-value" id="remainingDisplay">$10,000</div>
+    </div>
+  </div>
+
+  <div id="goalMessage" class="goal-reached">🔥 GOAL REACHED — THANK YOU! 🔥</div>
+  <div class="admin-link-wrap"><a href="/admin" class="admin-link">⚙ Admin</a></div>
+</div>
+
+<div class="confetti-burst" id="confetti"></div>
+
+<script>
+// ═══════════════════════════════════
+//  FIRE ENGINE
+// ═══════════════════════════════════
+const fireCanvas = document.getElementById('fireCanvas');
+const fctx = fireCanvas.getContext('2d');
+let FW, FH;
+function fireResize() { FW = fireCanvas.width = window.innerWidth; FH = fireCanvas.height = window.innerHeight; }
+window.addEventListener('resize', fireResize); fireResize();
+
+const particles = [];
+
+class Fireball {
+  constructor(x,y,big=false){
+    this.x=x; this.y=y;
+    this.vx=(Math.random()-.5)*(big?4:2.5);
+    this.vy=-(2+Math.random()*(big?6:4));
+    this.r=big?30+Math.random()*40:12+Math.random()*22;
+    this.maxR=this.r*(1.4+Math.random()*.8);
+    this.life=1; this.decay=.012+Math.random()*(big?.01:.018);
+    this.expanding=true; this.hue=15+Math.random()*25; this.bright=55+Math.random()*20;
+    this.wb=Math.random()*Math.PI*2; this.wbs=.08+Math.random()*.1;
+    for(let i=0;i<Math.floor(this.r/4);i++) particles.push(new Ember(this.x,this.y,true));
+  }
+  update(){
+    this.wb+=this.wbs; this.x+=this.vx+Math.sin(this.wb)*.6; this.y+=this.vy;
+    this.vy+=.04; this.vx*=.98; this.life-=this.decay;
+    if(this.expanding){this.r+=1.5; if(this.r>=this.maxR)this.expanding=false;}
+    else this.r*=.97;
+  }
+  draw(){
+    const a=Math.max(0,this.life),r=Math.max(1,this.r);
+    const h=fctx.createRadialGradient(this.x,this.y,0,this.x,this.y,r*2.2);
+    h.addColorStop(0,`hsla(${this.hue},100%,${this.bright}%,${a*.22})`);
+    h.addColorStop(1,'hsla(20,30%,15%,0)');
+    fctx.beginPath(); fctx.arc(this.x,this.y,r*2.2,0,Math.PI*2); fctx.fillStyle=h; fctx.fill();
+    const g=fctx.createRadialGradient(this.x-r*.2,this.y-r*.2,0,this.x,this.y,r);
+    const lp=Math.min(1,this.life*1.5);
+    g.addColorStop(0,`hsla(55,100%,95%,${a*lp})`);
+    g.addColorStop(.2,`hsla(40,100%,75%,${a*lp})`);
+    g.addColorStop(.5,`hsla(${this.hue+10},100%,${this.bright+10}%,${a})`);
+    g.addColorStop(.8,`hsla(${this.hue},100%,${this.bright}%,${a*.8})`);
+    g.addColorStop(1,'hsla(0,50%,10%,0)');
+    fctx.beginPath(); fctx.arc(this.x,this.y,r,0,Math.PI*2); fctx.fillStyle=g; fctx.fill();
+    if(this.life>.4){
+      const fl=fctx.createRadialGradient(this.x,this.y,0,this.x,this.y,r*.35);
+      fl.addColorStop(0,`rgba(255,255,220,${a*.8})`); fl.addColorStop(1,'rgba(255,255,220,0)');
+      fctx.beginPath(); fctx.arc(this.x,this.y,r*.35,0,Math.PI*2); fctx.fillStyle=fl; fctx.fill();
+    }
+  }
+}
+class Ember {
+  constructor(x,y,fromBall=false){
+    this.x=x??Math.random()*FW; this.y=y??FH+5;
+    this.vx=(Math.random()-.5)*(fromBall?4:1.5);
+    this.vy=fromBall?-(1+Math.random()*5):-(1.2+Math.random()*3.5);
+    this.size=fromBall?1+Math.random()*3:.8+Math.random()*2;
+    this.life=1; this.decay=fromBall?.015+Math.random()*.02:.006+Math.random()*.012;
+    this.hue=20+Math.random()*35;
+  }
+  update(){this.x+=this.vx+Math.sin(Date.now()*.003+this.y)*.5; this.y+=this.vy; this.vy+=.015; this.life-=this.decay;}
+  draw(){
+    const a=Math.max(0,this.life);
+    fctx.save(); fctx.globalAlpha=a*.9; fctx.shadowBlur=8; fctx.shadowColor=`hsl(${this.hue},100%,60%)`;
+    fctx.fillStyle=`hsl(${this.hue},100%,${50+this.life*35}%)`;
+    fctx.beginPath(); fctx.arc(this.x,this.y,this.size*Math.max(.1,this.life),0,Math.PI*2); fctx.fill(); fctx.restore();
+  }
+}
+class FlameCol {
+  constructor(x){this.x=x; this.ph=Math.random()*Math.PI*2; this.sp=.02+Math.random()*.025; this.ht=.25+Math.random()*.3; this.w=80+Math.random()*120;}
+  draw(t){
+    const f=1+Math.sin(t*this.sp+this.ph)*.12;
+    const h=FH*this.ht*f;
+    const g=fctx.createLinearGradient(this.x,FH,this.x,FH-h);
+    g.addColorStop(0,'rgba(255,80,0,.5)'); g.addColorStop(.3,'rgba(255,120,0,.3)');
+    g.addColorStop(.65,'rgba(255,180,0,.12)'); g.addColorStop(1,'rgba(255,220,0,0)');
+    fctx.save(); fctx.filter=`blur(20px)`;
+    fctx.beginPath(); fctx.ellipse(this.x,FH,this.w/2,h,0,0,Math.PI*2);
+    fctx.fillStyle=g; fctx.fill(); fctx.restore();
+  }
+}
+const flameCols=[]; for(let i=0;i<7;i++) flameCols.push(new FlameCol(FW*(i/6)));
+for(let i=0;i<60;i++){const e=new Ember(); e.y=Math.random()*FH; e.life=Math.random(); particles.push(e);}
+let lastBall=0;
+function fireLoop(t){
+  fctx.clearRect(0,0,FW,FH);
+  const bg=fctx.createLinearGradient(0,FH,0,FH-FH*.18);
+  bg.addColorStop(0,'rgba(255,50,0,.22)'); bg.addColorStop(1,'rgba(255,50,0,0)');
+  fctx.fillStyle=bg; fctx.fillRect(0,0,FW,FH);
+  for(const c of flameCols) c.draw(t);
+  if(Math.random()<.5) particles.push(new Ember());
+  if(t-lastBall>900+Math.random()*1400){lastBall=t; particles.push(new Fireball(Math.random()*FW,FH+10,Math.random()<.25));}
+  const em=[],fb=[];
+  for(let i=particles.length-1;i>=0;i--){
+    particles[i].update();
+    if(particles[i].life<=0){particles.splice(i,1);continue;}
+    (particles[i] instanceof Fireball?fb:em).push(particles[i]);
+  }
+  em.forEach(p=>p.draw()); fb.forEach(p=>p.draw());
+  while(particles.length>600) particles.shift();
+  requestAnimationFrame(fireLoop);
+}
+requestAnimationFrame(fireLoop);
+document.addEventListener('click',e=>{
+  for(let i=0;i<4+Math.floor(Math.random()*4);i++)
+    particles.push(new Fireball(e.clientX+(Math.random()-.5)*40,e.clientY+(Math.random()-.5)*20,i===0));
+});
+
+// ═══════════════════════════════════
+//  GAUGE ENGINE
+// ═══════════════════════════════════
+const gc      = document.getElementById('gaugeCanvas');
+const gctx    = gc.getContext('2d');
+let gaugeTarget = 0;   // 0–1
+let gaugeCurrent = 0;  // animated value
+let animFrame;
+
+// Gauge geometry — matches the logo's "overcharged" half-circle gauge
+const GCX = 240, GCY = 210;    // pivot centre
+const OUTER_R = 195;           // outer ring
+const INNER_R = 170;           // inner face ring
+//const ARC_START = Math.PI * 0.72;   // left end  (~130°)
+//const ARC_END   = Math.PI * 0.28;   // right end (~50°) — going CW through bottom would overshoot; we go the short arc
+const ARC_START = Math.PI * 30 / 180;   // left end  (~130°)
+const ARC_END   = Math.PI * 150 / 180;   // right end (~50°) — going CW through bottom would overshoot; we go the short arc
+// We want the needle to sweep from lower-left → lower-right through the TOP of the gauge (like the logo)
+// That means: start = 7 o'clock, end = 5 o'clock, sweeping through 12 o'clock
+const NEEDLE_START = Math.PI * 1.84;  // ~7 o'clock (210°)
+const NEEDLE_END   = Math.PI * 1.15;  // ~5 o'clock (333°) — goes CCW? No — let's use angles in standard JS:
+// Actually in canvas: 0=right, PI/2=down, PI=left, 3PI/2=up
+// Logo gauge arc goes from bottom-left to bottom-right through the TOP
+// So: start ≈ 210° = 7*PI/6, end ≈ -30° = 330° = 11*PI/6, sweeping counterclockwise (anticlockwise=true)
+const SWEEP_START = (30 * Math.PI) / 180;   // 7 o'clock
+const SWEEP_END   = (150 * Math.PI) / 180;   // 5 o'clock
+// needle angle at pct: lerp from SWEEP_START to SWEEP_END going counterclockwise
+// CCW from 210 → 90 (12 o'clock) → 330: total sweep = 360-(330-210)=240° going CCW
+
+const DOT_COUNT = 18;
+const DOT_R_INNER = OUTER_R - 4;
+const DOT_R_OUTER = OUTER_R + 2;
+const FACE_BG_R   = INNER_R - 2;
+
+function needleAngle(pct) {
+  // CCW from 210° to 330° = going backwards through 180,90,0/360 = 240° sweep
+  // Standard: 210° CCW to 330° means subtracting 240° × pct
+  // But canvas angles increase CW. CCW means we go:
+  // 210° → 90° → 330° (CCW) = angle = 210 - 240*pct  (in degrees)
+  const deg = 150 + 245 * pct;
+  return (deg * Math.PI) / 180;
+}
+
+function drawGauge(pct) {
+  const W = gc.width, H = gc.height;
+  gctx.clearRect(0, 0, W, H);
+
+  // ── Outer ring glow ──
+  const glowR = fctx.createRadialGradient ? null : null; // just use shadow
+  gctx.save();
+  gctx.shadowColor = `rgba(255,80,0,${0.15 + pct * 0.35})`;
+  gctx.shadowBlur  = 30 + pct * 20;
+  gctx.beginPath();
+  gctx.arc(GCX, GCY, OUTER_R + 6, 0, Math.PI * 2);
+  gctx.strokeStyle = `rgba(255,${60+pct*80},0,${0.2+pct*0.4})`;
+  gctx.lineWidth   = 3;
+  gctx.stroke();
+  gctx.restore();
+
+  // ── Outer black ring (like logo) ──
+  gctx.beginPath();
+  gctx.arc(GCX, GCY, OUTER_R, 0, Math.PI * 2);
+  const ringGrad = gctx.createRadialGradient(GCX - 40, GCY - 40, OUTER_R * 0.5, GCX, GCY, OUTER_R);
+  ringGrad.addColorStop(0, '#2a1a0a');
+  ringGrad.addColorStop(1, '#0a0500');
+  gctx.fillStyle = ringGrad;
+  gctx.fill();
+  gctx.strokeStyle = '#1a0a00';
+  gctx.lineWidth = 2;
+  gctx.stroke();
+
+  // ── Dot studs around ring (like logo) ──
+  for (let i = 0; i < DOT_COUNT; i++) {
+    const angle = (i / DOT_COUNT) * Math.PI * 2 - Math.PI;
+    const dotR  = OUTER_R - 13;
+    const dx = GCX + Math.cos(angle) * dotR;
+    const dy = GCY + Math.sin(angle) * dotR;
+    const progress = i / DOT_COUNT; // 0..1 around the clock
+    // Determine if this dot is "lit" based on gauge progress
+    // Lit range: 7 o'clock (i≈14.6) → 5 o'clock (i≈15.4) going CCW through top
+    // Map dot position to the 240° sweep
+    // 7 o'clock = angle 210° from top = index ≈ (210+90)/360*18 = 15 (measuring from 0=top CW)
+    // Actually let's just light dots in the CCW arc from start to current needle
+    const dotDeg = ((angle * 180 / Math.PI) + 90 + 360) % 360; // 0=top, CW
+    // Start dot = 210°, end = 330°, needle sweeps CCW = decreasing angle
+    // A dot is "active" if it falls in the swept arc
+    const startDeg = 210, endDeg = 330;
+    // CCW sweep: from 210° going CCW (decreasing), pct of 240°
+    // current needle deg from top:
+    const needleDegFromTop = ((needleAngle(pct) * 180 / Math.PI) + 90 + 360) % 360;
+    // dot is active if it's between needleDegFromTop and startDeg going CW
+    let inArc = false;
+    // The lit arc goes CW from needleDeg to 210 (CW)
+    if (needleDegFromTop <= startDeg) {
+      inArc = dotDeg >= needleDegFromTop && dotDeg <= startDeg;
+    } else {
+      inArc = dotDeg >= needleDegFromTop || dotDeg <= startDeg;
+    }
+    inArc=true;
+    gctx.beginPath();
+    gctx.arc(dx, dy, 7, 0, Math.PI * 2);
+    if (inArc) {
+      const litGrad = gctx.createRadialGradient(dx - 2, dy - 2, 0, dx, dy, 7);
+      litGrad.addColorStop(0, '#ff8800');
+      litGrad.addColorStop(0.5, '#ff3300');
+      litGrad.addColorStop(1, '#aa1100');
+      gctx.fillStyle = litGrad;
+      gctx.shadowColor = '#ff4400';
+      gctx.shadowBlur  = 12;
+    } else {
+      gctx.fillStyle = '#1a0800';
+      gctx.shadowBlur = 0;
+    }
+    gctx.fill();
+    gctx.strokeStyle = '#0a0400';
+    gctx.lineWidth = 1;
+    gctx.stroke();
+    gctx.shadowBlur = 0;
+  }
+
+  // ── White inner face (like logo) ──
+  gctx.beginPath();
+  gctx.arc(GCX, GCY, FACE_BG_R, 0, Math.PI * 2);
+  // Warm off-white with slight gradient
+  const faceGrad = gctx.createRadialGradient(GCX - 30, GCY - 60, 10, GCX, GCY, FACE_BG_R);
+  faceGrad.addColorStop(0, '#fff8f0');
+  faceGrad.addColorStop(0.7, '#f5e8d8');
+  faceGrad.addColorStop(1, '#e8d0b0');
+  gctx.fillStyle = faceGrad;
+  gctx.fill();
+  gctx.strokeStyle = '#ccaa80';
+  gctx.lineWidth = 2;
+  gctx.stroke();
+
+  // ── Inner arc gauge window (the rounded-rect display in the logo) ──
+  // Sits in the upper half of the face, like the logo
+  const boxCX = GCX, boxCY = GCY - 35;
+  const boxW = 85, boxH = 45, boxRad = 10;
+  gctx.save();
+  // Outer bezel
+  roundRect(gctx, boxCX - boxW/2 - 5, boxCY - boxH/2 - 5, boxW + 10, boxH + 10, boxRad + 4);
+  gctx.fillStyle = '#1a0800';
+  gctx.strokeStyle = '#2a1200';
+  gctx.lineWidth = 2;
+  gctx.fill(); gctx.stroke();
+  // Inner face
+  roundRect(gctx, boxCX - boxW/2, boxCY - boxH/2, boxW, boxH, boxRad);
+  gctx.fillStyle = '#f8f0e0';
+  gctx.fill();
+  gctx.strokeStyle = '#8a6030';
+  gctx.lineWidth = 1.5;
+  gctx.stroke();
+  // Inner highlight line
+  roundRect(gctx, boxCX - boxW/2 + 6, boxCY - boxH/2 + 6, boxW - 12, boxH - 12, boxRad - 4);
+  gctx.strokeStyle = 'rgba(255,220,160,0.5)';
+  gctx.lineWidth = 1;
+  gctx.stroke();
+
+  // "overcharged" text in the box — or show percentage
+  gctx.font = 'bold 13px "Barlow Condensed", sans-serif';
+  gctx.letterSpacing = '0.12em';
+  gctx.textAlign = 'center'; gctx.textBaseline = 'middle';
+
+  if (pct >= 1) {
+    gctx.fillStyle = '#cc2200';
+    gctx.font = 'bold 15px "Barlow Condensed", sans-serif';
+    gctx.fillText('OVERCHARGED', boxCX, boxCY - 10);
+  } else {
+    gctx.fillStyle = '#4a2800';
+    gctx.fillText('overcharged', boxCX, boxCY - 10);
+  }
+
+  // pct readout
+  gctx.font = `bold ${pct >= 1 ? 22 : 20}px "Bebas Neue", sans-serif`;
+  gctx.fillStyle = pct >= 1 ? '#ff2200' : '#1a0800';
+  gctx.fillText(Math.round(pct * 100) + '%', boxCX, boxCY + 10);
+  gctx.restore();
+
+  // ── Arc track on face (the sweep path) ──
+  // Background track
+  gctx.beginPath();
+  gctx.arc(GCX, GCY, 125, SWEEP_START, SWEEP_END, true); // CCW
+  gctx.strokeStyle = 'rgba(180,120,60,0.3)';
+  gctx.lineWidth = 14;
+  gctx.lineCap = 'round';
+  gctx.stroke();
+
+  // Filled track (progress)
+  if (pct > 0) {
+    const fillAngle = needleAngle(pct);
+    gctx.beginPath();
+    gctx.arc(GCX, GCY, 125, SWEEP_END, fillAngle, false); // CCW
+    const trackGrad = gctx.createConicalGradient ? null : null;
+    // Use a linear approximation — orange→red→gold based on pct
+    gctx.strokeStyle = pct >= 1
+      ? '#ffcc00'
+      : pct > 0.7
+        ? `hsl(${30 - pct * 20},100%,50%)`
+        : `hsl(${40 - pct * 30},100%,52%)`;
+    gctx.lineWidth = 14;
+    gctx.lineCap  = 'round';
+    gctx.shadowColor = `rgba(255,${100-pct*60},0,0.7)`;
+    gctx.shadowBlur  = 10;
+    gctx.stroke();
+    gctx.shadowBlur = 0;
+  }
+
+  // ── Tick marks ──
+  const tickCount = 9; // 0,25,50,75,100 and intermediates
+  for (let i = 0; i <= tickCount; i++) {
+    const tp  = i / tickCount;
+    const ang = needleAngle(tp);
+    const major = i % 2 === 0;
+    const r1 = 108, r2 = major ? 94 : 100;
+    const x1 = GCX + Math.cos(ang) * r1, y1 = GCY + Math.sin(ang) * r1;
+    const x2 = GCX + Math.cos(ang) * r2, y2 = GCY + Math.sin(ang) * r2;
+    gctx.beginPath(); gctx.moveTo(x1,y1); gctx.lineTo(x2,y2);
+    gctx.strokeStyle = 'rgba(80,40,10,0.6)';
+    gctx.lineWidth = major ? 2 : 1;
+    gctx.stroke();
+    if (major) {
+      const label = Math.round(tp * 100) + '%';
+      const lx = GCX + Math.cos(ang) * 82, ly = GCY + Math.sin(ang) * 82;
+      gctx.save();
+      gctx.font = '9px "Barlow Condensed",sans-serif';
+      gctx.fillStyle = 'rgba(80,40,10,0.7)';
+      gctx.textAlign = 'center'; gctx.textBaseline = 'middle';
+      gctx.fillText(label, lx, ly);
+      gctx.restore();
+    }
+  }
+
+  // ── Needle ──
+  const nAngle  = needleAngle(pct);
+  const needleLen = 118;
+  const nTipX  = GCX + Math.cos(nAngle) * needleLen;
+  const nTipY  = GCY + Math.sin(nAngle) * needleLen;
+  // Tail
+  const tailAng = nAngle + Math.PI;
+  const tailX = GCX + Math.cos(tailAng) * 22;
+  const tailY = GCY + Math.sin(tailAng) * 22;
+
+  // Needle shadow / glow
+  gctx.save();
+  gctx.shadowColor = 'rgba(0,0,0,0.5)';
+  gctx.shadowBlur  = 6;
+  gctx.shadowOffsetX = 2; gctx.shadowOffsetY = 2;
+
+  // Needle body
+  gctx.beginPath();
+  gctx.moveTo(tailX, tailY);
+  // Widen at base
+  const perpAng = nAngle + Math.PI / 2;
+  const bw = 5;
+  gctx.lineTo(GCX + Math.cos(perpAng) * bw, GCY + Math.sin(perpAng) * bw);
+  gctx.lineTo(nTipX, nTipY);
+  gctx.lineTo(GCX - Math.cos(perpAng) * bw, GCY - Math.sin(perpAng) * bw);
+  gctx.closePath();
+  gctx.fillStyle = '#0f0705';
+  gctx.fill();
+  gctx.restore();
+
+  // Needle tip highlight
+  gctx.beginPath();
+  gctx.moveTo(GCX + Math.cos(nAngle) * 30, GCY + Math.sin(nAngle) * 30);
+  gctx.lineTo(nTipX, nTipY);
+  gctx.strokeStyle = '#2a1a0a';
+  gctx.lineWidth = 1;
+  gctx.stroke();
+
+  // Pivot hub
+  gctx.beginPath();
+  gctx.arc(GCX, GCY, 18, 0, Math.PI * 2);
+  const hubGrad = gctx.createRadialGradient(GCX - 4, GCY - 4, 0, GCX, GCY, 18);
+  hubGrad.addColorStop(0, '#4a3020');
+  hubGrad.addColorStop(0.5, '#1a0d05');
+  hubGrad.addColorStop(1, '#0a0500');
+  gctx.fillStyle = hubGrad;
+  gctx.shadowColor = 'rgba(0,0,0,0.6)';
+  gctx.shadowBlur  = 8;
+  gctx.fill();
+  gctx.shadowBlur = 0;
+
+  gctx.beginPath(); gctx.arc(GCX, GCY, 18, 0, Math.PI * 2);
+  gctx.strokeStyle = '#3a2010'; gctx.lineWidth = 2; gctx.stroke();
+
+  // Inner pivot dot
+  gctx.beginPath(); gctx.arc(GCX, GCY, 6, 0, Math.PI * 2);
+  gctx.fillStyle = '#f0c060'; gctx.fill();
+
+  // ── "Red Hot Beverly" text arcs ──
+  // Top arc: "Red Hot"
+  
+  drawArcText(gctx, 'Red Hot', GCX, GCY, FACE_BG_R - 22, -Math.PI + 1.1, '#cc2200', 'bold 38px "Bebas Neue",serif', false);
+  // Bottom arc: "Beverly"
+  drawArcText(gctx, 'Beverly', GCX, GCY, FACE_BG_R - 22, -Math.PI + 2.00, '#cc2200', 'bold 38px "Bebas Neue",serif', false);
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawArcText(ctx, text, cx, cy, r, startAngle, color, font, topArc) {
+  ctx.save();
+  ctx.font = font;
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Measure total arc width
+  const chars = text.split('');
+  const widths = chars.map(c => ctx.measureText(c).width);
+  const totalW = widths.reduce((a, b) => a + b, 0) + (chars.length - 1) * 2;
+  const totalAngle = totalW / r;
+
+  let angle = startAngle - totalAngle / 2;
+
+  for (let i = 0; i < chars.length; i++) {
+    const charAngle = angle + widths[i] / (2 * r);
+    ctx.save();
+    ctx.translate(cx + Math.cos(charAngle) * r, cy + Math.sin(charAngle) * r);
+    ctx.rotate(charAngle + (topArc ? -Math.PI / 2 : Math.PI / 2));
+    // Drop shadow
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur  = 4;
+    ctx.shadowOffsetX = 1; ctx.shadowOffsetY = 1;
+    ctx.fillText(chars[i], 0, 0);
+    ctx.restore();
+    angle += widths[i] / r + 2 / r;
+  }
+  ctx.restore();
+}
+
+// Smooth needle animation
+function animateGauge() {
+  const diff = gaugeTarget - gaugeCurrent;
+  if (Math.abs(diff) > 0.0005) {
+    gaugeCurrent += diff * 0.05;
+    drawGauge(gaugeCurrent);
+    animFrame = requestAnimationFrame(animateGauge);
+  } else {
+    gaugeCurrent = gaugeTarget;
+    drawGauge(gaugeCurrent);
+  }
+}
+
+function setGaugePct(pct) {
+  gaugeTarget = Math.min(1, Math.max(0, pct));
+  cancelAnimationFrame(animFrame);
+  animateGauge();
+}
+
+// ═══════════════════════════════════
+//  DATA & UI
+// ═══════════════════════════════════
+let goal = 10000, raised = 0;
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+
+function renderUI() {
+  //const pct = goal > 0 ? Math.min(raised / goal, 1) : 0;
+  const pct = goal > 0 ? Math.min(raised / goal, 1) : 0;
+  const remaining = Math.max(goal - raised, 0);
+  document.getElementById('goalDisplay').textContent     = fmt(goal);
+  document.getElementById('raisedDisplay').textContent   = fmt(raised);
+  document.getElementById('remainingDisplay').textContent= fmt(remaining);
+  document.getElementById('percentPill').textContent     = Math.round(pct * 100) + '%';
+  const msg = document.getElementById('goalMessage');
+  if (raised >= goal) { msg.style.display = 'block'; fireConfetti(); celebrationFireballs(); }
+  else                 { msg.style.display = 'none'; }
+  setGaugePct(pct);
+}
+
+function celebrationFireballs() {
+  for (let i = 0; i < 20; i++)
+    setTimeout(() => particles.push(new Fireball(Math.random()*FW, FH*(0.3+Math.random()*.6), true)), i*120);
+}
+
+async function loadFromAPI() {
+  try {
+    const res  = await fetch('/api/fundraiser');
+    const data = await res.json();
+    goal = data.goal; raised = data.raised;
+  } catch(e) {}
+  renderUI();
+}
+
+function fireConfetti() {
+  const c = document.getElementById('confetti'); c.innerHTML = '';
+  const cols = ['#ff4500','#ff8c00','#ffcc00','#ff2200','#ffaa00','#fff3a0'];
+  for (let i = 0; i < 100; i++) {
+    const p = document.createElement('div'); p.className = 'confetti-piece';
+    p.style.left = Math.random()*100+'vw'; p.style.top = '-10px';
+    p.style.background = cols[Math.floor(Math.random()*cols.length)];
+    p.style.borderRadius = Math.random()>.5?'50%':'0';
+    p.style.animationDelay = Math.random()+'s';
+    p.style.animationDuration = (1.2+Math.random()*.8)+'s';
+    c.appendChild(p);
+  }
+  setTimeout(() => c.innerHTML='', 4000);
+}
+
+drawGauge(0);
+loadFromAPI();
+setInterval(loadFromAPI, 30000);
+</script>
+</body>
+</html><!DOCTYPE html>
